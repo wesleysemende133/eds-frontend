@@ -89,6 +89,7 @@ export const InvoiceUpload = () => {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!file) {
@@ -96,18 +97,14 @@ export const InvoiceUpload = () => {
       return
     }
 
-    // ALINHAMENTO SÊNIOR: A chave DEVE ser 'arquivo' para bater exato com o DTO Java 
+    // CORREÇÃO: A chave 'file' agora bate exatamente com o nome da variável no seu DTO Java
     const formData = new FormData()
-    formData.append('arquivo', file) 
+    formData.append('file', file) 
     
-    // Opcional: Se quiser passar a descrição capturada de algum input do formulário:
-    // formData.append('descricao', 'Fatura de serviços de infraestrutura tecnológica')
-
     try {
       setLoading(true)
       setError('')
       
-      // Envia o FormData contendo o arquivo mapeado corretamente para a API Java
       await uploadInvoice(formData)
       
       setSuccess(true)
@@ -118,14 +115,13 @@ export const InvoiceUpload = () => {
       }, 2000)
     } catch (err) {
       console.error('Falha no upload do documento para o backend:', err)
-      
-      // Extrai mensagens normatizadas devolvidas pelo RestControllerAdvice do Java
-      const apiMessage = err.response?.data?.message || err.friendlyMessage
-      setError(apiMessage || 'Falha de comunicação com o servidor de processamento OCR.')
+      const apiMessage = err.response?.data?.message || 'Falha de comunicação com o servidor.'
+      setError(apiMessage)
     } finally {
       setLoading(false)
     }
   }
+
 
   return (
     <div className="upload-container">

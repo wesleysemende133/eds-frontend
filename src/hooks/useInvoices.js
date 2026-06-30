@@ -6,7 +6,7 @@ export const useInvoices = () => {
   // 1. Alinhado com @GetMapping de /api/faturas ou /api/faturas/status/{status}
   const getInvoices = useCallback(async (status = null) => {
     try {
-      const url = status ? `/api/faturas/status/${status}` : '/api/faturas'
+      const url = status ? `/faturas/status/${status}` : '/faturas'
       const { data } = await api.get(url)
       return data
     } catch (err) {
@@ -17,7 +17,7 @@ export const useInvoices = () => {
   // 2. Alinhado com @GetMapping("/{id}") recebendo UUID
   const getInvoiceById = useCallback(async (id) => {
     try {
-      const { data } = await api.get(`/api/faturas/${id}`)
+      const { data } = await api.get(`/faturas/${id}`)
       return data
     } catch (err) {
       throw err
@@ -25,22 +25,14 @@ export const useInvoices = () => {
   }, [])
 
   // 3. Alinhado com @PostMapping(value = "/upload") e DTO mapeado com 'file'
-  const uploadInvoice = useCallback(async (fileObject) => {
+ const uploadInvoice = useCallback(async (formData) => {
     try {
-      const formData = new FormData()
-      
-      // ALINHAMENTO SÊNIOR: A chave deve ser exatamente 'file' para casar com o DTO Java
-      formData.append('file', fileObject)
-      
-      // OPCIONAL: Se o seu DTO aceitar 'descricao', o Spring captura do mesmo FormData:
-      // formData.append('descricao', 'Fatura de infraestrutura local')
-
-      // Sênior Tip: Omitimos o Header 'Content-Type'. O Axios e o Navegador identificam
-      // o FormData e montam o cabeçalho com o 'boundary' dinâmico correto.
-      const { data } = await api.post('/api/faturas/upload', formData)
+      // O Axios detectará que formData é um Multipart e adicionará o header correto
+      const { data } = await api.post('/faturas/upload', formData)
       return data
     } catch (err) {
-      throw err
+      // Repassa o erro para o componente tratar
+      throw err 
     }
   }, [])
 
@@ -48,7 +40,7 @@ export const useInvoices = () => {
   const deleteInvoice = useCallback(async (id) => {
     try {
       // Retorna 204 No Content do Java. O Axios resolve como uma promise de sucesso vazia
-      const { data } = await api.delete(`/api/faturas/${id}`)
+      const { data } = await api.delete(`/faturas/${id}`)
       return data
     } catch (err) {
       throw err
