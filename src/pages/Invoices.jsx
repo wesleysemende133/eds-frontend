@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { FileText, Trash2, AlertCircle, Filter } from 'lucide-react'
+import { FileText, Trash2, AlertCircle, Filter, Eye } from 'lucide-react'
 import { useInvoices } from '../hooks/useInvoices'
 import './Invoices.css'
 
@@ -12,48 +12,60 @@ export const Invoices = () => {
   const [filter, setFilter] = useState('ALL')
   const [deleteLoading, setDeleteLoading] = useState(null)
 
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const status = filter === 'ALL' ? null : filter
-        const data = await getInvoices(status)
-        setInvoices(data)
-      } catch (err) {
-        console.error('[v0] Error fetching invoices:', err)
-        setError('Erro ao carregar faturas')
-      } finally {
-        setLoading(false)
-      }
+  // Memoriza a função para evitar recriações desnecessárias no ciclo do useEffect
+  const fetchInvoices = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Alinha o parâmetro conforme esperado pelos Query Params do ControladorFatura
+      const statusParam = filter === 'ALL' ? null : filter
+      const data = await getInvoices(statusParam)
+      
+      // Garante resiliência caso o backend traga um objeto paginado (data.content) ou array vazio
+      const listaFaturas = Array.isArray(data) ? data : data?.content || []
+      setInvoices(listaFaturas)
+    } catch (err) {
+      console.error('Erro ao buscar faturas na API Java:', err)
+      setError(err.friendlyMessage || 'Erro ao carregar faturas. Verifique se o servidor está online.')
+    } finally {
+      setLoading(false)
     }
+  }, [filter, getInvoices])
 
+  useEffect(() => {
     fetchInvoices()
-  }, [filter])
+  }, [fetchInvoices])
 
   const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja deletar esta fatura?')) {
-      try {
-        setDeleteLoading(id)
-        await deleteInvoice(id)
-        setInvoices((prev) => prev.filter((inv) => inv.id !== id))
-      } catch (err) {
-        console.error('[v0] Error deleting invoice:', err)
-        setError('Erro ao deletar fatura')
-      } finally {
-        setDeleteLoading(null)
-      }
+    if (!id || !window.confirm('Tem certeza de que deseja deletar permanentemente esta fatura?')) {
+      return
+    }
+
+    try {
+      setDeleteLoading(id)
+      setError(null)
+      await deleteInvoice(id)
+      setInvoices((prev) => prev.filter((inv) => inv.id !== id))
+    } catch (err) {
+      console.error('Erro ao deletar fatura no ControladorFatura:', err)
+      setError(err.friendlyMessage || 'Não foi possível excluir a fatura.')
+    } finally {
+      setDeleteLoading(null)
     }
   }
 
+  // Normalização do mapeamento de Enums do StatusFatura.java
   const getStatusBadge = (status) => {
+    const statusNormalizado = status?.toUpperCase()
     const statusMap = {
       PENDENTE: { label: 'Pendente', className: 'badge-warning' },
       PROCESSADA: { label: 'Processada', className: 'badge-success' },
+      PAGO: { label: 'Pago', className: 'badge-success' },
       REJEITADA: { label: 'Rejeitada', className: 'badge-danger' },
+      CANCELADO: { label: 'Cancelado', className: 'badge-danger' },
     }
-    const current = statusMap[status] || { label: status, className: 'badge-default' }
-    return current
+    return statusMap[statusNormalizado] || { label: status || 'Desconhecido', className: 'badge-default' }
   }
 
   return (
@@ -61,11 +73,11 @@ export const Invoices = () => {
       <div className="invoices-header">
         <h1>Gerenciar Faturas</h1>
         <Link to="/faturas/upload" className="btn-upload">
-          + Upload de Fatura
+          + Novo Upload (OCR)
         </Link>
       </div>
 
-      {/* Filters */}
+      {/* Seção de Filtros */}
       <div className="filters-section">
         <div className="filter-group">
           <Filter size={20} />
@@ -77,37 +89,41 @@ export const Invoices = () => {
               key={status}
               className={`filter-btn ${filter === status ? 'active' : ''}`}
               onClick={() => setFilter(status)}
+              disabled={loading}
             >
-              {status === 'ALL' ? 'Todos' : status}
+              {status === 'ALL' ? 'Todos' : status.toLowerCase()}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Error */}
+      {/* Mensagens de Feedback */}
       {error && (
-        <div className="alert alert-error">
+        <div className="alert alert-error" role="alert">
           <AlertCircle size={20} />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Loading */}
-      {loading && <p className="loading-text">Carregando faturas...</p>}
+      {loading && (
+        <div className="loading-container">
+          <p className="loading-text">Buscando documentos no banco de dados corporativo...</p>
+        </div>
+      )}
 
-      {/* Empty */}
+      {/* Estado Vazio (Empty State) */}
       {!loading && !error && invoices.length === 0 && (
         <div className="empty-state">
           <FileText size={48} />
-          <h2>Nenhuma fatura encontrada</h2>
-          <p>Comece enviando uma nova fatura</p>
+          <h2>Nenhuma fatura localizada</h2>
+          <p>Envie um arquivo PDF para iniciar o processamento OCR automático.</p>
           <Link to="/faturas/upload" className="btn-primary">
-            Upload de Fatura
+            Fazer Upload de Fatura
           </Link>
         </div>
       )}
 
-      {/* Table */}
+      {/* Tabela de Dados */}
       {!loading && !error && invoices.length > 0 && (
         <div className="table-responsive">
           <table className="invoices-table">
@@ -116,10 +132,10 @@ export const Invoices = () => {
                 <th>ID</th>
                 <th>Número</th>
                 <th>Fornecedor</th>
-                <th>Valor</th>
+                <th>Valor Nominal</th>
                 <th>Vencimento</th>
                 <th>Status</th>
-                <th>Data</th>
+                <th>Data Cadastro</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -127,18 +143,20 @@ export const Invoices = () => {
               {invoices.map((invoice) => {
                 const statusInfo = getStatusBadge(invoice.status)
                 return (
-                  <tr key={invoice.id}>
-                    <td className="cell-id">{invoice.id.slice(0, 8)}</td>
-                    <td className="cell-numero">{invoice.numero}</td>
-                    <td className="cell-fornecedor">
-                      {invoice.fornecedor || '-'}
+                  <tr key={invoice.id || Math.random()}>
+                    <td className="cell-id" title={invoice.id}>
+                      {invoice.id ? `${invoice.id.slice(0, 8)}...` : 'N/A'}
                     </td>
+                    <td className="cell-numero">{invoice.numero || 'Não extraído'}</td>
+                    <td className="cell-fornecedor">{invoice.fornecedor || '-'}</td>
                     <td className="cell-valor">
-                      R$ {invoice.valor?.toFixed(2) || '0.00'}
+                      {invoice.valor !== undefined && invoice.valor !== null
+                        ? invoice.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'MZN' })
+                        : 'MT 0,00'}
                     </td>
                     <td>
                       {invoice.dataVencimento
-                        ? new Date(invoice.dataVencimento).toLocaleDateString('pt-BR')
+                        ? new Date(invoice.dataVencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
                         : '-'}
                     </td>
                     <td>
@@ -147,21 +165,24 @@ export const Invoices = () => {
                       </span>
                     </td>
                     <td className="cell-date">
-                      {new Date(invoice.data).toLocaleDateString('pt-BR')}
+                      {invoice.data 
+                        ? new Date(invoice.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) 
+                        : '-'}
                     </td>
                     <td className="cell-actions">
                       <Link
                         to={`/faturas/${invoice.id}`}
                         className="action-link"
-                        title="Ver detalhes"
+                        title="Ver detalhes completos"
                       >
+                        <Eye size={16} />
                         Detalhes
                       </Link>
                       <button
                         className="action-delete"
                         onClick={() => handleDelete(invoice.id)}
                         disabled={deleteLoading === invoice.id}
-                        title="Deletar fatura"
+                        title="Deletar fatura do sistema"
                       >
                         <Trash2 size={16} />
                       </button>

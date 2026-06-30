@@ -1,49 +1,18 @@
 import { create } from 'zustand'
 
 const authStore = create((set) => ({
-  user: (() => {
-    try {
-      const saved = localStorage.getItem('user')
-      return saved ? JSON.parse(saved) : null
-    } catch {
-      return null
-    }
-  })(),
-  token: localStorage.getItem('token') || null,
+  // --- ESTADOS GLOBAIS ---
+  user: null,
+  token: null,
   loading: false,
   error: null,
 
-  setUser: (user) => {
-    set({ user })
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user))
-    } else {
-      localStorage.removeItem('user')
-    }
-  },
-
-  setToken: (token) => {
-    set({ token })
-    if (token) {
-      localStorage.setItem('token', token)
-    } else {
-      localStorage.removeItem('token')
-    }
-  },
-
-  setLoading: (loading) => set({ loading }),
+  // --- AÇÕES MODIFICADORAS (ACTIONS) ---
+  setUser: (user) => set({ user }),
+  setToken: (token) => set({ token }),
+  setLoading: (loading) => set({ loading }), // Garante que a função exista no contrato
   setError: (error) => set({ error }),
-
-  logout: () => {
-    set({ user: null, token: null, error: null })
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-  },
-
-  isAuthenticated: () => {
-    const { token } = authStore.getState()
-    return !!token
-  },
+  logout: () => set({ user: null, token: null, error: null })
 }))
 
 export default authStore

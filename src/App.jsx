@@ -7,8 +7,10 @@ import { Dashboard } from './pages/Dashboard'
 import { Invoices } from './pages/Invoices'
 import { InvoiceUpload } from './pages/InvoiceUpload'
 import { InvoiceDetail } from './pages/InvoiceDetail'
-import { Profile } from './pages/Profile'
+import {Profile} from './pages/Profile' // ← CORREÇÃO: SEM as chaves {}
 import authStore from './store/authStore'
+
+// ... resto do código
 
 function App() {
   const { token } = authStore()
