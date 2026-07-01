@@ -12,17 +12,16 @@ export const Invoices = () => {
   const [filter, setFilter] = useState('ALL')
   const [deleteLoading, setDeleteLoading] = useState(null)
 
-  // Memoriza a função para evitar recriações desnecessárias no ciclo do useEffect
   const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // Alinha o parâmetro conforme esperado pelos Query Params do ControladorFatura
       const statusParam = filter === 'ALL' ? null : filter
       const data = await getInvoices(statusParam)
       
-      // Garante resiliência caso o backend traga um objeto paginado (data.content) ou array vazio
+      console.log('📋 Faturas recebidas:', data) // 👈 Debug
+      
       const listaFaturas = Array.isArray(data) ? data : data?.content || []
       setInvoices(listaFaturas)
     } catch (err) {
@@ -55,17 +54,64 @@ export const Invoices = () => {
     }
   }
 
-  // Normalização do mapeamento de Enums do StatusFatura.java
+  // ✅ CORRIGIDO: Adicionar todos os status possíveis
   const getStatusBadge = (status) => {
     const statusNormalizado = status?.toUpperCase()
     const statusMap = {
-      PENDENTE: { label: 'Pendente', className: 'badge-warning' },
-      PROCESSADA: { label: 'Processada', className: 'badge-success' },
-      PAGO: { label: 'Pago', className: 'badge-success' },
-      REJEITADA: { label: 'Rejeitada', className: 'badge-danger' },
-      CANCELADO: { label: 'Cancelado', className: 'badge-danger' },
+      'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', className: 'badge-warning' },
+      'PROCESSANDO': { label: 'Processando', className: 'badge-info' },
+      'PROCESSADO': { label: 'Processado', className: 'badge-success' },
+      'APROVADO': { label: 'Aprovado', className: 'badge-success' },
+      'REJEITADO': { label: 'Rejeitado', className: 'badge-danger' },
+      'ERRO_EXTRACAO': { label: 'Erro na Extração', className: 'badge-danger' },
+      'CANCELADO': { label: 'Cancelado', className: 'badge-danger' },
+      'PENDENTE': { label: 'Pendente', className: 'badge-warning' },
+      'PAGO': { label: 'Pago', className: 'badge-success' },
     }
     return statusMap[statusNormalizado] || { label: status || 'Desconhecido', className: 'badge-default' }
+  }
+
+  // ✅ Função para formatar moeda
+  const formatarMoeda = (valor) => {
+    if (valor === undefined || valor === null) return 'MT 0,00'
+    return `MT ${valor.toLocaleString('pt-MZ', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`
+  }
+
+  // ✅ Função para formatar data
+  const formatarData = (dataString) => {
+    if (!dataString) return '-'
+    try {
+      const data = new Date(dataString)
+      if (isNaN(data.getTime())) return '-'
+      return data.toLocaleDateString('pt-MZ', { 
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+    } catch {
+      return '-'
+    }
+  }
+
+  // ✅ Função para formatar data e hora
+  const formatarDataHora = (dataString) => {
+    if (!dataString) return '-'
+    try {
+      const data = new Date(dataString)
+      if (isNaN(data.getTime())) return '-'
+      return data.toLocaleDateString('pt-MZ', { 
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return '-'
+    }
   }
 
   return (
@@ -77,27 +123,25 @@ export const Invoices = () => {
         </Link>
       </div>
 
-      {/* Seção de Filtros */}
       <div className="filters-section">
         <div className="filter-group">
           <Filter size={20} />
           <span>Filtrar por Status:</span>
         </div>
         <div className="filter-buttons">
-          {['ALL', 'PENDENTE', 'PROCESSADA', 'REJEITADA'].map((status) => (
+          {['ALL', 'AGUARDANDO_APROVACAO', 'PROCESSANDO', 'PROCESSADO', 'APROVADO', 'REJEITADO', 'ERRO_EXTRACAO'].map((status) => (
             <button
               key={status}
               className={`filter-btn ${filter === status ? 'active' : ''}`}
               onClick={() => setFilter(status)}
               disabled={loading}
             >
-              {status === 'ALL' ? 'Todos' : status.toLowerCase()}
+              {status === 'ALL' ? 'Todos' : status.replace('_', ' ').toLowerCase()}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Mensagens de Feedback */}
       {error && (
         <div className="alert alert-error" role="alert">
           <AlertCircle size={20} />
@@ -111,7 +155,6 @@ export const Invoices = () => {
         </div>
       )}
 
-      {/* Estado Vazio (Empty State) */}
       {!loading && !error && invoices.length === 0 && (
         <div className="empty-state">
           <FileText size={48} />
@@ -123,7 +166,6 @@ export const Invoices = () => {
         </div>
       )}
 
-      {/* Tabela de Dados */}
       {!loading && !error && invoices.length > 0 && (
         <div className="table-responsive">
           <table className="invoices-table">
@@ -133,6 +175,7 @@ export const Invoices = () => {
                 <th>Número</th>
                 <th>Fornecedor</th>
                 <th>Valor Nominal</th>
+                <th>Data Fatura</th>
                 <th>Vencimento</th>
                 <th>Status</th>
                 <th>Data Cadastro</th>
@@ -147,17 +190,25 @@ export const Invoices = () => {
                     <td className="cell-id" title={invoice.id}>
                       {invoice.id ? `${invoice.id.slice(0, 8)}...` : 'N/A'}
                     </td>
-                    <td className="cell-numero">{invoice.numero || 'Não extraído'}</td>
-                    <td className="cell-fornecedor">{invoice.fornecedor || '-'}</td>
+                    <td className="cell-numero">
+                      {/* ✅ CORRIGIDO: usar numeroFatura */}
+                      {invoice.numeroFatura || 'Não extraído'}
+                    </td>
+                    <td className="cell-fornecedor">
+                      {/* ✅ CORRIGIDO: usar fornecedor */}
+                      {invoice.fornecedor || '-'}
+                    </td>
                     <td className="cell-valor">
-                      {invoice.valor !== undefined && invoice.valor !== null
-                        ? invoice.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'MZN' })
-                        : 'MT 0,00'}
+                      {/* ✅ CORRIGIDO: usar valorTotal */}
+                      {formatarMoeda(invoice.valorTotal)}
                     </td>
                     <td>
-                      {invoice.dataVencimento
-                        ? new Date(invoice.dataVencimento).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
-                        : '-'}
+                      {/* ✅ ADICIONADO: dataFatura */}
+                      {formatarData(invoice.dataFatura)}
+                    </td>
+                    <td>
+                      {/* ✅ CORRIGIDO: dataVencimento */}
+                      {invoice.dataVencimento ? formatarData(invoice.dataVencimento) : '-'}
                     </td>
                     <td>
                       <span className={`badge ${statusInfo.className}`}>
@@ -165,9 +216,8 @@ export const Invoices = () => {
                       </span>
                     </td>
                     <td className="cell-date">
-                      {invoice.data 
-                        ? new Date(invoice.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) 
-                        : '-'}
+                      {/* ✅ CORRIGIDO: usar dataCriacao */}
+                      {formatarDataHora(invoice.dataCriacao)}
                     </td>
                     <td className="cell-actions">
                       <Link

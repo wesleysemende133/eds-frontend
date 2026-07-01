@@ -1,3 +1,4 @@
+// hooks/useProfile.js
 import { useState, useCallback } from 'react'
 import api from '../lib/axios'
 
@@ -5,12 +6,13 @@ export const useProfile = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Busca os dados do perfil do usuário logado na API Java
+  // ✅ Busca os dados do perfil do usuário logado na API Java
   const getProfile = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const { data } = await api.get('/api/usuarios/perfil')
+      // ✅ REMOVER o /api duplicado
+      const { data } = await api.get('/usuarios/perfil')
       return data
     } catch (err) {
       const msg = err.response?.data?.message || 'Erro ao carregar perfil.'
@@ -21,12 +23,13 @@ export const useProfile = () => {
     }
   }, [])
 
-  // Atualiza os dados cadastrais do perfil
+  // ✅ Atualiza os dados cadastrais do perfil
   const updateProfile = useCallback(async (profileData) => {
     try {
       setLoading(true)
       setError(null)
-      const { data } = await api.put('/api/usuarios/perfil', profileData)
+      // ✅ REMOVER o /api duplicado
+      const { data } = await api.put('/usuarios/perfil', profileData)
       return data
     } catch (err) {
       const msg = err.response?.data?.message || 'Erro ao atualizar perfil.'

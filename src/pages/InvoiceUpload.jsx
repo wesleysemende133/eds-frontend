@@ -54,32 +54,81 @@ export const InvoiceUpload = () => {
     }
   }
 
+  // ✅ Função para obter extensão do arquivo
+  const getFileExtension = (filename) => {
+    return filename.split('.').pop()?.toLowerCase() || ''
+  }
+
+  // ✅ Função para verificar se é imagem
+  const isImage = (file) => {
+    return file.type?.startsWith('image/') || 
+           ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'svg'].includes(getFileExtension(file.name))
+  }
+
+  // ✅ Função para verificar se é PDF
+  const isPDF = (file) => {
+    return file.type === 'application/pdf' || getFileExtension(file.name) === 'pdf'
+  }
+
+  // ✅ Função para verificar se é documento do Office
+  const isOffice = (file) => {
+    const ext = getFileExtension(file.name)
+    return ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp', 'rtf', 'txt'].includes(ext)
+  }
+
+  // ✅ Função para obter ícone do tipo de arquivo
+  const getFileIcon = (file) => {
+    const ext = getFileExtension(file.name)
+    if (isPDF(file)) return '📄'
+    if (isImage(file)) return '🖼️'
+    if (ext === 'doc' || ext === 'docx') return '📝'
+    if (ext === 'xls' || ext === 'xlsx') return '📊'
+    if (ext === 'ppt' || ext === 'pptx') return '📑'
+    return '📎'
+  }
+
+  // ✅ Função para obter descrição do tipo de arquivo
+  const getFileTypeDescription = (file) => {
+    const ext = getFileExtension(file.name)
+    if (isPDF(file)) return 'Documento PDF'
+    if (isImage(file)) return 'Imagem'
+    if (ext === 'doc' || ext === 'docx') return 'Documento Word'
+    if (ext === 'xls' || ext === 'xlsx') return 'Planilha Excel'
+    if (ext === 'ppt' || ext === 'pptx') return 'Apresentação PowerPoint'
+    if (ext === 'txt') return 'Arquivo de Texto'
+    if (ext === 'rtf') return 'Documento RTF'
+    if (ext === 'odt') return 'Documento OpenOffice'
+    if (ext === 'ods') return 'Planilha OpenOffice'
+    if (ext === 'odp') return 'Apresentação OpenOffice'
+    return `Arquivo ${ext.toUpperCase()}`
+  }
+
   const handleFileSelect = (selectedFile) => {
     setError('')
     setSuccess(false)
 
-    // 1. Validação de Extensão/MIME Type Aceitos pelo OCR do Backend Moçambicano
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/png']
-    if (!validTypes.includes(selectedFile.type)) {
-      setError('Formato inválido. Selecione um documento PDF ou imagem (JPEG/PNG).')
+    // ✅ VALIDAÇÃO REMOVIDA: Aceitar qualquer tipo de arquivo
+    // Apenas verifica se o arquivo existe
+    if (!selectedFile) {
+      setError('Nenhum arquivo selecionado.')
       return
     }
 
-    // 2. Validação Contida ao Limite Máximo Configurado no Spring Boot
-    const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+    // ✅ VALIDAÇÃO DE TAMANHO: Aumentar para 50MB
+    const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setError('O tamanho do arquivo excede o limite máximo permitido de 10MB.')
+      setError(`O arquivo excede o limite máximo de ${MAX_FILE_SIZE / 1024 / 1024}MB.`)
       return
     }
 
     setFile(selectedFile)
 
-    // Abordagem Sênior: Geração de Preview Performática sem ler em Base64
-    if (selectedFile.type.startsWith('image/')) {
+    // ✅ GERAR PREVIEW APENAS PARA IMAGENS
+    if (isImage(selectedFile)) {
       if (preview) URL.revokeObjectURL(preview)
       setPreview(URL.createObjectURL(selectedFile))
     } else {
-      setPreview(null) // PDFs usam ícone genérico informacional
+      setPreview(null)
     }
   }
 
@@ -89,7 +138,6 @@ export const InvoiceUpload = () => {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!file) {
@@ -97,9 +145,12 @@ export const InvoiceUpload = () => {
       return
     }
 
-    // CORREÇÃO: A chave 'file' agora bate exatamente com o nome da variável no seu DTO Java
     const formData = new FormData()
     formData.append('file', file) 
+    
+    // ✅ Opcional: Adicionar metadados adicionais
+    formData.append('nomeOriginal', file.name)
+    formData.append('tipoArquivo', file.type || getFileExtension(file.name))
     
     try {
       setLoading(true)
@@ -122,12 +173,12 @@ export const InvoiceUpload = () => {
     }
   }
 
-
   return (
     <div className="upload-container">
       <div className="upload-header">
         <h1>Upload de Fatura</h1>
         <p>Envie documentos para processamento automático via OCR inteligente</p>
+        <p className="upload-info">Formatos suportados: PDF, Imagens, Word, Excel, PowerPoint e mais</p>
       </div>
 
       {success && (
@@ -166,15 +217,22 @@ export const InvoiceUpload = () => {
                 <X size={16} />
               </button>
             </div>
-          ) : file && file.type === 'application/pdf' ? (
-            <div className="preview-pdf" onClick={(e) => e.stopPropagation()}>
-              <FileText size={48} className="pdf-icon" />
-              <span className="pdf-name">{file.name}</span>
+          ) : file ? (
+            <div className="preview-file" onClick={(e) => e.stopPropagation()}>
+              <div className="file-icon-large">{getFileIcon(file)}</div>
+              <div className="file-info-upload">
+                <span className="file-name-large">{file.name}</span>
+                <span className="file-type">{getFileTypeDescription(file)}</span>
+                <span className="file-size-large">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </span>
+              </div>
               <button
                 type="button"
                 className="btn-remove"
                 onClick={clearSelectedFile}
                 disabled={loading}
+                title="Remover arquivo"
               >
                 <X size={16} />
               </button>
@@ -184,7 +242,10 @@ export const InvoiceUpload = () => {
               <Upload size={48} className="upload-icon" />
               <h3>Arraste e solte seu arquivo aqui</h3>
               <p>ou clique para explorar os arquivos locais</p>
-              <span className="file-types">Formatos suportados: PDF, JPEG ou PNG (Max: 10MB)</span>
+              <span className="file-types">
+                📄 PDF | 🖼️ Imagens | 📝 Word | 📊 Excel | 📑 PowerPoint | 📎 Outros
+              </span>
+              <span className="file-size-limit">Tamanho máximo: 50MB</span>
             </>
           )}
 
@@ -192,23 +253,13 @@ export const InvoiceUpload = () => {
             type="file"
             ref={fileInputRef}
             onChange={handleFileInput}
-            accept=".pdf,.jpg,.jpeg,.png"
+            // ✅ REMOVER accept para aceitar todos os tipos
+            // accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.odt,.ods,.odp"
             className="file-input"
             disabled={loading}
-            style={{ display: 'none' }} // Oculta o input padrão para usar a DropZone estilizada
+            style={{ display: 'none' }}
           />
         </div>
-
-        {file && !preview && file.type !== 'application/pdf' && (
-          <div className="file-info">
-            <div className="file-details">
-              <span className="file-name">{file.name}</span>
-              <span className="file-size">
-                {(file.size / 1024 / 1024).toFixed(2)} MB
-              </span>
-            </div>
-          </div>
-        )}
 
         <div className="form-actions">
           <button

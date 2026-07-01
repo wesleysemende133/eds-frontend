@@ -8,7 +8,7 @@ import './Profile.css'
 export const Profile = () => {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const { updateProfile, loading, error } = useProfile()
+  const { getProfile, updateProfile, loading, error } = useProfile()
   
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
@@ -19,13 +19,27 @@ export const Profile = () => {
   })
   const [successMessage, setSuccessMessage] = useState('')
 
+  // ✅ Carregar perfil ao montar o componente
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        await getProfile()
+      } catch (err) {
+        console.error('Erro ao carregar perfil:', err)
+      }
+    }
+    
+    loadProfile()
+  }, [getProfile])
+
+  // ✅ Atualizar formulário quando o usuário mudar
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name || '',
+        name: user.nomeCompleto || user.name || '',
         email: user.email || '',
-        company: user.company || '',
-        phone: user.phone || ''
+        company: user.empresa || user.company || '',
+        phone: user.telefone || user.phone || ''
       })
     }
   }, [user])
@@ -53,10 +67,10 @@ export const Profile = () => {
   const handleCancel = () => {
     setIsEditing(false)
     setFormData({
-      name: user.name || '',
+      name: user.nomeCompleto || user.name || '',
       email: user.email || '',
-      company: user.company || '',
-      phone: user.phone || ''
+      company: user.empresa || user.company || '',
+      phone: user.telefone || user.phone || ''
     })
   }
 
