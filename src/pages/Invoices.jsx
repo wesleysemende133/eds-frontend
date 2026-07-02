@@ -36,6 +36,7 @@ export const Invoices = () => {
     fetchInvoices()
   }, [fetchInvoices])
 
+  // Invoices.jsx - handleDelete corrigido
   const handleDelete = async (id) => {
     if (!id || !window.confirm('Tem certeza de que deseja deletar permanentemente esta fatura?')) {
       return
@@ -44,11 +45,21 @@ export const Invoices = () => {
     try {
       setDeleteLoading(id)
       setError(null)
+      
+      // ✅ Aguardar a exclusão
       await deleteInvoice(id)
-      setInvoices((prev) => prev.filter((inv) => inv.id !== id))
+      
+      // ✅ Remover a fatura da lista local (mais rápido que recarregar tudo)
+      setInvoices(prev => prev.filter(inv => inv.id !== id))
+      
+      // ✅ Opcional: recarregar para garantir consistência
+      // await fetchInvoices()
+      
     } catch (err) {
-      console.error('Erro ao deletar fatura no ControladorFatura:', err)
+      console.error('Erro ao deletar fatura:', err)
       setError(err.friendlyMessage || 'Não foi possível excluir a fatura.')
+      // ✅ Recarregar para garantir consistência
+      await fetchInvoices()
     } finally {
       setDeleteLoading(null)
     }
@@ -229,6 +240,7 @@ export const Invoices = () => {
                         Detalhes
                       </Link>
                       <button
+                        type="button"
                         className="action-delete"
                         onClick={() => handleDelete(invoice.id)}
                         disabled={deleteLoading === invoice.id}
