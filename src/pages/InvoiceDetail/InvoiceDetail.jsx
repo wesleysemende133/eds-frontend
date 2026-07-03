@@ -14,9 +14,11 @@ import {
   Tag,
   Info,
   CreditCard,
-  User,
-  X,
-  Loader2
+  Loader2,
+  Banknote,
+  Phone,
+  Receipt,
+  User
 } from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
@@ -26,6 +28,7 @@ import { Modal } from '../../components/common/Modal';
 import { Alert } from '../../components/common/Alert';
 import { Spinner } from '../../components/common/Spinner';
 import { InvoiceActions } from '../../components/shared/InvoiceActions';
+import api from '../../services/api';
 import './InvoiceDetail.css';
 
 export const InvoiceDetail = () => {
@@ -40,6 +43,7 @@ export const InvoiceDetail = () => {
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [dadosPagamento, setDadosPagamento] = useState(null);
 
   const fetchInvoice = useCallback(async () => {
     try {
@@ -53,6 +57,21 @@ export const InvoiceDetail = () => {
       }
       
       setInvoice(data);
+      
+      if (data.dadosPagamento) {
+        try {
+          const parsed = typeof data.dadosPagamento === 'string' 
+            ? JSON.parse(data.dadosPagamento) 
+            : data.dadosPagamento;
+          setDadosPagamento(parsed);
+        } catch (e) {
+          console.error('Erro ao parsear dados de pagamento:', e);
+          setDadosPagamento(null);
+        }
+      } else {
+        setDadosPagamento(null);
+      }
+      
     } catch (err) {
       console.error('Erro ao buscar fatura:', err);
       
@@ -73,7 +92,6 @@ export const InvoiceDetail = () => {
     }
   }, [id, fetchInvoice]);
 
-  // ✅ Função de download
   const handleDownload = async () => {
     if (!invoice?.urlArquivo) {
       alert('Arquivo não disponível para download.');
@@ -83,28 +101,18 @@ export const InvoiceDetail = () => {
     try {
       setDownloadLoading(true);
       
-      // Buscar o arquivo do backend
-      const response = await fetch(`http://localhost:8080/api/faturas/${id}/download`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await api.get(`/faturas/${id}/download`, {
+        responseType: 'blob'
       });
 
-      if (!response.ok) {
-        throw new Error('Erro ao baixar o arquivo');
-      }
-
-      // Obter o nome do arquivo
-      const contentDisposition = response.headers.get('content-disposition');
+      const contentDisposition = response.headers['content-disposition'];
       let filename = invoice.nomeArquivo || 'fatura.pdf';
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="(.+)"/);
         if (match) filename = match[1];
       }
 
-      // Criar blob e download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
@@ -161,6 +169,18 @@ export const InvoiceDetail = () => {
     return statusMap[status?.toUpperCase()] || { label: status || 'Desconhecido', variant: 'default' };
   };
 
+  const getStatusPagamentoProps = (status) => {
+    const statusMap = {
+      'NAO_APLICAVEL': { label: 'Não aplicável', variant: 'default' },
+      'PENDENTE': { label: 'Aguardando pagamento', variant: 'warning' },
+      'PROCESSANDO': { label: 'A processar', variant: 'info' },
+      'PAGO': { label: 'Pago', variant: 'success' },
+      'FALHOU': { label: 'Falhou', variant: 'danger' },
+      'CANCELADO': { label: 'Cancelado', variant: 'danger' },
+    };
+    return statusMap[status] || { label: status || 'Desconhecido', variant: 'default' };
+  };
+
   const formatarData = (dataString) => {
     if (!dataString) return '-';
     try {
@@ -201,6 +221,101 @@ export const InvoiceDetail = () => {
     })}`;
   };
 
+  const renderDadosPagamento = () => {
+    if (!dadosPagamento) return null;
+
+    const metodo = dadosPagamento.metodo?.replace('_', ' ');
+    const statusPagamento = dadosPagamento.status;
+    const statusInfo = getStatusPagamentoProps(statusPagamento);
+    const dados = dadosPagamento.dados;
+    const valor = dadosPagamento.valor;
+    const referencia = dadosPagamento.referencia;
+    const moeda = dadosPagamento.moeda || 'MZN';
+
+    return (
+      <Card className="info-card pagamento-card">
+        <div className="card-header">
+          <Banknote size={18} />
+          <h3>Dados de Pagamento</h3>
+        </div>
+        <div className="pagamento-grid">
+          <div className="pagamento-info">
+            <div className="info-row">
+              <label>Método</label>
+              <span className="highlight">{metodo || 'Não identificado'}</span>
+            </div>
+            <div className="info-row">
+              <label>Status</label>
+              <Badge variant={statusInfo.variant}>
+                {statusInfo.label}
+              </Badge>
+            </div>
+            {referencia && (
+              <div className="info-row">
+                <label>Referência</label>
+                <span className="mono">{referencia.numero}</span>
+              </div>
+            )}
+            {valor && (
+              <div className="info-row">
+                <label>Valor</label>
+                <span className="valor-pagamento">{formatarMoeda(valor)}</span>
+              </div>
+            )}
+            {moeda && (
+              <div className="info-row">
+                <label>Moeda</label>
+                <span>{moeda}</span>
+              </div>
+            )}
+          </div>
+
+          {dados && (
+            <div className="pagamento-detalhes">
+              <label>Detalhes</label>
+              {dados.banco && (
+                <div className="detalhe-item">
+                  <Building size={14} />
+                  <span><strong>Banco:</strong> {dados.banco}</span>
+                </div>
+              )}
+              {dados.iban && (
+                <div className="detalhe-item">
+                  <Receipt size={14} />
+                  <span><strong>IBAN:</strong> <span className="mono">{dados.iban}</span></span>
+                </div>
+              )}
+              {dados.titular && (
+                <div className="detalhe-item">
+                  <User size={14} />
+                  <span><strong>Titular:</strong> {dados.titular}</span>
+                </div>
+              )}
+              {dados.swift && (
+                <div className="detalhe-item">
+                  <Tag size={14} />
+                  <span><strong>SWIFT:</strong> {dados.swift}</span>
+                </div>
+              )}
+              {dados.numero && (
+                <div className="detalhe-item">
+                  <Phone size={14} />
+                  <span><strong>Telefone:</strong> {dados.numero}</span>
+                </div>
+              )}
+              {dados.operadora && (
+                <div className="detalhe-item">
+                  <Tag size={14} />
+                  <span><strong>Operadora:</strong> {dados.operadora}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  };
+
   if (loading) {
     return (
       <div className="invoice-detail-container">
@@ -230,7 +345,6 @@ export const InvoiceDetail = () => {
 
   return (
     <div className="invoice-detail-container">
-      {/* Modal de Confirmação */}
       <Modal
         isOpen={showDeleteModal}
         onClose={cancelDelete}
@@ -254,7 +368,6 @@ export const InvoiceDetail = () => {
         <p className="modal-warning">⚠️ Esta ação não pode ser desfeita.</p>
       </Modal>
 
-      {/* HEADER */}
       <div className="detail-header">
         <div className="detail-header-left">
           <Button variant="ghost" onClick={() => navigate('/faturas')} className="btn-back" disabled={deleteLoading}>
@@ -288,7 +401,6 @@ export const InvoiceDetail = () => {
         </div>
       </div>
 
-      {/* MENSAGEM DE SUCESSO */}
       {deleteSuccess && (
         <Alert variant="success">
           <CheckCircle size={18} />
@@ -296,7 +408,6 @@ export const InvoiceDetail = () => {
         </Alert>
       )}
 
-      {/* STATUS CARD */}
       <Card className="status-card">
         <div className="status-grid">
           <div className="status-item">
@@ -320,11 +431,8 @@ export const InvoiceDetail = () => {
         </div>
       </Card>
 
-      {/* CONTENT */}
       <div className="detail-content">
-        {/* LEFT COLUMN */}
         <div className="left-column">
-          {/* METADADOS */}
           <Card className="info-card">
             <div className="card-header">
               <Info size={18} />
@@ -342,7 +450,6 @@ export const InvoiceDetail = () => {
             </div>
           </Card>
 
-          {/* FINANCEIRO */}
           <Card className="info-card">
             <div className="card-header">
               <CreditCard size={18} />
@@ -364,7 +471,6 @@ export const InvoiceDetail = () => {
             </div>
           </Card>
 
-          {/* FORNECEDOR */}
           <Card className="info-card">
             <div className="card-header">
               <Building size={18} />
@@ -390,7 +496,8 @@ export const InvoiceDetail = () => {
             </div>
           </Card>
 
-          {/* ARQUIVO */}
+          {renderDadosPagamento()}
+
           {(invoice.nomeArquivo || invoice.urlArquivo) && (
             <Card className="info-card">
               <div className="card-header">
@@ -410,7 +517,6 @@ export const InvoiceDetail = () => {
             </Card>
           )}
 
-          {/* OBSERVAÇÕES */}
           {(invoice.descricao || invoice.errosValidacao) && (
             <Card className="info-card">
               <div className="card-header">
@@ -429,9 +535,7 @@ export const InvoiceDetail = () => {
           )}
         </div>
 
-        {/* RIGHT COLUMN */}
         <div className="right-column">
-          {/* AÇÕES */}
           <Card className="info-card actions-card">
             <div className="card-header">
               <Tag size={18} />
