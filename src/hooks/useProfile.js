@@ -1,6 +1,6 @@
 // hooks/useProfile.js
 import { useState, useCallback } from 'react'
-import api from '../lib/axios'
+import api from '../services/api'
 
 export const useProfile = () => {
   const [loading, setLoading] = useState(false)

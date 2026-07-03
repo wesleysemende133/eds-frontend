@@ -1,6 +1,6 @@
 // src/hooks/useInvoices.js
 import { useCallback } from 'react'
-import api from '../lib/axios'
+import api from '../services/api'
 
 export const useInvoices = () => {
   

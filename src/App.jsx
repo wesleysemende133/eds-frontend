@@ -1,13 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Navbar } from './components/Navbar'
-import { ProtectedRoute } from './components/ProtectedRoute'
-import { Login } from './pages/Login'
-import { Register } from './pages/Register'
-import { Dashboard } from './pages/Dashboard'
-import { Invoices } from './pages/Invoices'
-import { InvoiceUpload } from './pages/InvoiceUpload'
-import { InvoiceDetail } from './pages/InvoiceDetail'
-import {Profile} from './pages/Profile' // ← CORREÇÃO: SEM as chaves {}
+import { Navbar } from './components/layout/Navbar/Navbar'
+import { ProtectedRoute } from './components/shared/ProtectedRoute'
+import { Login } from './pages/Login/Login'
+import { Register } from './pages/Register/Register'
+import { Dashboard } from './pages/Dashboard/Dashboard'
+import { Invoices } from './pages/Invoices/Invoices'
+import { InvoiceUpload } from './pages/InvoiceUpload/InvoiceUpload'
+import { InvoiceDetail } from './pages/InvoiceDetail/InvoiceDetail'
+import {Profile} from './pages/Profile/Profile' // ← CORREÇÃO: SEM as chaves {}
 import authStore from './store/authStore'
 
 // ... resto do código

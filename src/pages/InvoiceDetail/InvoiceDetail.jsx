@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Trash2, AlertCircle, CheckCircle, X } from 'lucide-react';
-import { useInvoices } from '../hooks/useInvoices';
-import { InvoiceActions } from './InvoiceActions';
+import { useInvoices } from '../../hooks/useInvoices';
+import { InvoiceActions } from '../../components/shared/InvoiceActions';
 import './InvoiceDetail.css';
 
 export const InvoiceDetail = () => {

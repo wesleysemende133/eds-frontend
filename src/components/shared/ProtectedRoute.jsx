@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import authStore from '../store/authStore'
+import authStore from '../../store/authStore';
 
 export const ProtectedRoute = ({ children }) => {
   const { token } = authStore()

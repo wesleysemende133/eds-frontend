@@ -1,6 +1,6 @@
 // src/pages/InvoiceActions.jsx
 import React, { useState } from 'react';
-import { useInvoices } from '../hooks/useInvoices';
+import { useInvoices } from '../../hooks/useInvoices';
 import './InvoiceActions.css';
 
 export const InvoiceActions = ({ faturaId, status, onActionComplete }) => {

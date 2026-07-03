@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Upload, AlertCircle, CheckCircle, FileText, X } from 'lucide-react'
-import { useInvoices } from '../hooks/useInvoices'
+import { useInvoices } from '../../hooks/useInvoices'
 import './InvoiceUpload.css'
 
 export const InvoiceUpload = () => {

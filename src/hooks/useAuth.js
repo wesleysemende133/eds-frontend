@@ -1,7 +1,7 @@
 // hooks/useAuth.js
 import { useCallback } from 'react'
 import authStore from '../store/authStore'
-import api from '../lib/axios'
+import api from '../services/api'
 
 export const useAuth = () => {
   const user = authStore((state) => state.user)

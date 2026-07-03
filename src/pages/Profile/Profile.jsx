@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, Mail, Building, Calendar, Edit2, Save, X } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
-import { useProfile } from '../hooks/useProfile'
+import { useAuth } from '../../hooks/useAuth'
+import { useProfile } from '../../hooks/useProfile'
 import './Profile.css'
 
 export const Profile = () => {
