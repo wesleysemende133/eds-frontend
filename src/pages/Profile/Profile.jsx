@@ -38,6 +38,7 @@ export const Profile = () => {
     phone: ''
   });
 
+  // Carregar perfil
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -56,6 +57,7 @@ export const Profile = () => {
     loadProfile();
   }, [getProfile, navigate]);
 
+  // Atualizar formulário quando o usuário mudar
   useEffect(() => {
     if (user) {
       setFormData({
@@ -82,6 +84,10 @@ export const Profile = () => {
       };
       
       await updateProfile(dados);
+      
+      // ✅ Recarregar o perfil para garantir consistência
+      await getProfile();
+      
       setSuccessMessage('Perfil atualizado com sucesso!');
       setIsEditing(false);
       
