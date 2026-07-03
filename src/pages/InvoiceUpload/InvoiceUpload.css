@@ -1,49 +1,174 @@
-/* src/pages/InvoiceUpload/InvoiceUpload.css - Estilos específicos do InvoiceUpload */
+/* ============================================
+   INVOICE UPLOAD - ESTILOS PROFISSIONAIS
+   ============================================ */
 
 .upload-container {
   padding: 2rem 1.5rem;
   max-width: 800px;
   margin: 0 auto;
+  background: #f1f5f9;
+  min-height: 100vh;
 }
 
+/* ---------- HEADER ---------- */
 .upload-header {
   text-align: center;
   margin-bottom: 2rem;
 }
 
 .upload-header h1 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
-  color: var(--color-gray-900, #0a0a0a);
+  color: #0f172a;
   margin: 0 0 0.5rem 0;
 }
 
 .upload-header p {
-  color: var(--color-gray-500, #64748b);
+  color: #64748b;
   font-size: 0.95rem;
   margin: 0;
 }
 
 .upload-info {
   font-size: 0.85rem;
-  color: var(--color-gray-400, #94a3b8);
+  color: #94a3b8;
   margin-top: 0.25rem !important;
 }
 
-/* DROP ZONE */
+/* ---------- ERROR CONTAINER ---------- */
+.error-container {
+  margin-bottom: 1.5rem;
+}
+
+.error-alert {
+  padding: 0 !important;
+  border-radius: var(--radius-lg) !important;
+  background: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.error-alert-error {
+  border-left: 4px solid #ef4444 !important;
+}
+
+.error-alert-warning {
+  border-left: 4px solid #f59e0b !important;
+}
+
+.error-alert-info {
+  border-left: 4px solid #3b82f6 !important;
+}
+
+.error-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.error-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+}
+
+.error-icon-error {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.error-icon-warning {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.error-icon-info {
+  background: #dbeafe;
+  color: #3b82f6;
+}
+
+.error-message-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.error-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.error-details {
+  margin-top: 0.5rem;
+}
+
+.error-description {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.6;
+}
+
+.error-status {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-full);
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.error-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.error-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.error-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ---------- DROP ZONE ---------- */
 .drop-zone-card {
   padding: 0 !important;
   overflow: hidden;
+  background: #ffffff !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
 .drop-zone {
-  border: 2px dashed var(--color-gray-300, #cbd5e1);
-  border-radius: var(--radius-lg, 12px);
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--radius-lg);
   padding: 3rem 2rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
-  background: var(--color-white, #ffffff);
+  background: #ffffff;
   min-height: 260px;
   display: flex;
   flex-direction: column;
@@ -53,50 +178,50 @@
 }
 
 .drop-zone:hover:not(.has-file) {
-  border-color: var(--color-primary, #2563eb);
-  background: var(--color-primary-bg, #eff6ff);
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 
 .drop-zone.active {
-  border-color: var(--color-primary, #2563eb);
-  background: var(--color-primary-bg, #eff6ff);
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 
 .drop-zone.has-file {
   padding: 1.5rem;
   border-style: solid;
-  border-color: var(--color-success, #22c55e);
-  background: var(--color-success-bg, #dcfce7);
+  border-color: #22c55e;
+  background: #f0fdf4;
 }
 
 .upload-icon {
-  color: var(--color-gray-400, #94a3b8);
+  color: #94a3b8;
 }
 
 .drop-zone h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--color-gray-900, #0a0a0a);
+  color: #0f172a;
   margin: 0;
 }
 
 .drop-zone p {
-  color: var(--color-gray-500, #64748b);
+  color: #64748b;
   margin: 0;
   font-size: 0.9rem;
 }
 
 .file-types {
   font-size: 0.8rem;
-  color: var(--color-gray-400, #94a3b8);
+  color: #94a3b8;
 }
 
 .file-size-limit {
   font-size: 0.75rem;
-  color: var(--color-gray-400, #94a3b8);
+  color: #94a3b8;
 }
 
-/* PREVIEW */
+/* ---------- PREVIEW ---------- */
 .preview-image {
   position: relative;
   width: 100%;
@@ -104,9 +229,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius, 8px);
+  border-radius: var(--radius);
   overflow: hidden;
-  background: var(--color-gray-100, #f1f5f9);
+  background: #f1f5f9;
 }
 
 .preview-image img {
@@ -120,15 +245,15 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: var(--color-white, #ffffff);
-  border-radius: var(--radius, 8px);
+  background: #ffffff;
+  border-radius: var(--radius);
   width: 100%;
   max-width: 400px;
   position: relative;
 }
 
 .file-icon-large {
-  color: var(--color-primary, #2563eb);
+  color: #2563eb;
 }
 
 .file-info-upload {
@@ -138,13 +263,13 @@
 
 .file-name-large {
   font-weight: 600;
-  color: var(--color-gray-900, #0a0a0a);
+  color: #0f172a;
   word-break: break-all;
 }
 
 .file-type {
   font-size: 0.8rem;
-  color: var(--color-gray-500, #64748b);
+  color: #64748b;
   display: block;
 }
 
@@ -174,7 +299,7 @@
   cursor: not-allowed;
 }
 
-/* FORM ACTIONS */
+/* ---------- FORM ACTIONS ---------- */
 .upload-form {
   display: flex;
   flex-direction: column;
@@ -187,12 +312,11 @@
   gap: 0.75rem;
 }
 
-/* FILE INPUT */
 .file-input {
   display: none;
 }
 
-/* RESPONSIVE */
+/* ---------- RESPONSIVE ---------- */
 @media (max-width: 768px) {
   .upload-container {
     padding: 1rem;
@@ -218,6 +342,19 @@
 
   .file-info-upload {
     text-align: center;
+  }
+
+  .error-content {
+    flex-wrap: wrap;
+  }
+
+  .error-actions {
+    flex-direction: column;
+  }
+
+  .error-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -245,5 +382,23 @@
 
   .preview-image {
     max-width: 100%;
+  }
+
+  .error-icon-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+
+  .error-icon-wrapper svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .error-title {
+    font-size: 0.9rem;
+  }
+
+  .error-description {
+    font-size: 0.8rem;
   }
 }

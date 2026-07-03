@@ -15,7 +15,8 @@ import {
   Info,
   CreditCard,
   User,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
@@ -38,6 +39,7 @@ export const InvoiceDetail = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   const fetchInvoice = useCallback(async () => {
     try {
@@ -70,6 +72,54 @@ export const InvoiceDetail = () => {
       fetchInvoice();
     }
   }, [id, fetchInvoice]);
+
+  // ✅ Função de download
+  const handleDownload = async () => {
+    if (!invoice?.urlArquivo) {
+      alert('Arquivo não disponível para download.');
+      return;
+    }
+
+    try {
+      setDownloadLoading(true);
+      
+      // Buscar o arquivo do backend
+      const response = await fetch(`http://localhost:8080/api/faturas/${id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao baixar o arquivo');
+      }
+
+      // Obter o nome do arquivo
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = invoice.nomeArquivo || 'fatura.pdf';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      // Criar blob e download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+      console.error('Erro ao baixar arquivo:', err);
+      alert('Erro ao baixar o arquivo. Tente novamente.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
 
   const handleDeleteClick = () => setShowDeleteModal(true);
 
@@ -215,8 +265,17 @@ export const InvoiceDetail = () => {
         </div>
         
         <div className="header-actions">
-          <button className="btn-icon" disabled={deleteLoading} title="Baixar documento">
-            <Download size={18} />
+          <button
+            className="btn-icon btn-download"
+            onClick={handleDownload}
+            disabled={deleteLoading || downloadLoading || !invoice?.urlArquivo}
+            title={invoice?.urlArquivo ? 'Baixar documento' : 'Documento não disponível'}
+          >
+            {downloadLoading ? (
+              <Loader2 size={18} className="spinning" />
+            ) : (
+              <Download size={18} />
+            )}
           </button>
           <button
             className="btn-icon btn-danger"

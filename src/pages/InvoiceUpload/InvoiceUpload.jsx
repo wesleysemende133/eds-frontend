@@ -1,6 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, AlertCircle, CheckCircle, FileText, X, ArrowRight } from 'lucide-react';
+import { 
+  Upload, 
+  AlertCircle, 
+  CheckCircle, 
+  FileText, 
+  X, 
+  ArrowRight,
+  Info,
+  AlertTriangle,
+  RefreshCw,
+  FileWarning,
+  Copy
+} from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
@@ -17,6 +29,7 @@ export const InvoiceUpload = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [errorDetails, setErrorDetails] = useState(null);
   
   const fileInputRef = useRef(null);
 
@@ -74,6 +87,7 @@ export const InvoiceUpload = () => {
   const handleFileSelect = (selectedFile) => {
     setError('');
     setSuccess(false);
+    setErrorDetails(null);
 
     if (!selectedFile) {
       setError('Nenhum arquivo selecionado.');
@@ -105,6 +119,8 @@ export const InvoiceUpload = () => {
   const clearSelectedFile = () => {
     setFile(null);
     setPreview(null);
+    setError('');
+    setErrorDetails(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -121,6 +137,7 @@ export const InvoiceUpload = () => {
     try {
       setLoading(true);
       setError('');
+      setErrorDetails(null);
       
       await uploadInvoice(formData);
       
@@ -132,7 +149,102 @@ export const InvoiceUpload = () => {
       }, 2000);
     } catch (err) {
       console.error('Falha no upload:', err);
-      setError(err.friendlyMessage || 'Falha de comunicação com o servidor.');
+      
+      const errorMessage = err.response?.data?.message || err.message || '';
+      const errorStatus = err.response?.status;
+      
+      let userMessage = '';
+      let userDetails = '';
+      let errorIcon = AlertCircle;
+      let errorVariant = 'danger';
+      let userActions = [];
+
+      // ✅ Detectar arquivo duplicado
+      if (errorStatus === 409 || 
+          errorMessage?.toLowerCase().includes('duplicado') || 
+          errorMessage?.toLowerCase().includes('duplicate') ||
+          errorMessage?.toLowerCase().includes('already exists') ||
+          errorMessage?.toLowerCase().includes('existente')) {
+        
+        userMessage = 'Arquivo Duplicado';
+        userDetails = 'Já existe uma fatura com este arquivo no sistema. Não é possível enviar o mesmo documento duas vezes.';
+        errorIcon = Copy;
+        errorVariant = 'warning';
+        userActions = [
+          { label: 'Ver Faturas', action: () => navigate('/faturas'), variant: 'primary' },
+          { label: 'Tentar Outro Arquivo', action: clearSelectedFile, variant: 'secondary' }
+        ];
+      }
+      // ✅ Detectar arquivo corrompido
+      else if (errorStatus === 400 || 
+         errorMessage?.toLowerCase().includes('corrompido') ||
+         errorMessage?.toLowerCase().includes('invalid') ||
+         errorMessage?.toLowerCase().includes('corrupt') ||
+         errorMessage?.toLowerCase().includes('não pode ser lido') ||
+         errorMessage?.toLowerCase().includes('duplicado') ||
+         errorMessage?.toLowerCase().includes('duplicate') ||
+         errorMessage?.toLowerCase().includes('já existe')) {
+        
+        userMessage = 'Arquivo Duplicado ou Corrompido';
+        userDetails = 'Não foi possível processar esta fatura. Pode ser que: (1) Ela já exista no sistema, ou (2) O arquivo esteja danificado. Verifique o histórico ou a integridade do documento.';
+        errorIcon = FileWarning;
+        errorVariant = 'warning'; // Ou 'danger' se preferir
+        userActions = [
+          { label: 'Tentar Novamente', action: clearSelectedFile, variant: 'primary' },
+          { label: 'Consultar Faturas', action: () => window.open('/faturas', '_blank'), variant: 'secondary' }
+        ];
+      }
+      // ✅ Detectar arquivo muito grande
+      else if (errorStatus === 413) {
+        userMessage = 'Arquivo Muito Grande';
+        userDetails = `O tamanho máximo permitido é de 50MB. O arquivo atual excede este limite.`;
+        errorIcon = AlertTriangle;
+        errorVariant = 'warning';
+        userActions = [
+          { label: 'Selecionar Outro Arquivo', action: clearSelectedFile, variant: 'primary' }
+        ];
+      }
+      // ✅ Detectar formato não suportado
+      else if (errorStatus === 415) {
+        userMessage = 'Formato Não Suportado';
+        userDetails = `Formatos suportados: ${EXTENSOES_PERMITIDAS.join(', ')}`;
+        errorIcon = Info;
+        errorVariant = 'warning';
+        userActions = [
+          { label: 'Selecionar Outro Arquivo', action: clearSelectedFile, variant: 'primary' }
+        ];
+      }
+      // ✅ Erro de autenticação
+      else if (errorStatus === 401 || errorStatus === 403) {
+        userMessage = 'Sessão Expirada';
+        userDetails = 'A sua sessão expirou. Faça login novamente para continuar.';
+        errorIcon = AlertCircle;
+        errorVariant = 'danger';
+        userActions = [
+          { label: 'Fazer Login', action: () => navigate('/login'), variant: 'primary' }
+        ];
+      }
+      // ✅ Outros erros
+      else {
+        userMessage = 'Erro no Processamento';
+        userDetails = err.friendlyMessage || 'Ocorreu um erro inesperado. Tente novamente mais tarde.';
+        errorIcon = AlertCircle;
+        errorVariant = 'danger';
+        userActions = [
+          { label: 'Tentar Novamente', action: clearSelectedFile, variant: 'primary' },
+          { label: 'Contactar Suporte', action: () => window.location.href = 'mailto:suporte@eds.com', variant: 'secondary' }
+        ];
+      }
+
+      setError(userMessage);
+      setErrorDetails({
+        message: userDetails,
+        status: errorStatus,
+        icon: errorIcon,
+        variant: errorVariant,
+        actions: userActions
+      });
+      
     } finally {
       setLoading(false);
     }
@@ -153,11 +265,43 @@ export const InvoiceUpload = () => {
         </Alert>
       )}
 
-      {error && (
-        <Alert variant="danger">
-          <AlertCircle size={18} />
-          {error}
-        </Alert>
+      {error && errorDetails && (
+        <div className="error-container">
+          <div className={`error-alert error-alert-${errorDetails.variant}`}>
+            <div className="error-content">
+              <div className={`error-icon-wrapper error-icon-${errorDetails.variant}`}>
+                {(() => {
+                  const Icon = errorDetails.icon;
+                  return <Icon size={24} />;
+                })()}
+              </div>
+              <div className="error-message-wrapper">
+                <div className="error-title">{error}</div>
+                <div className="error-details">
+                  <p className="error-description">{errorDetails.message}</p>
+                  {errorDetails.status && (
+                    <span className="error-status">Código: {errorDetails.status}</span>
+                  )}
+                  <div className="error-actions">
+                    {errorDetails.actions.map((action, index) => (
+                      <Button 
+                        key={index}
+                        variant={action.variant} 
+                        size="sm" 
+                        onClick={action.action}
+                      >
+                        {action.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <button className="error-close" onClick={() => { setError(''); setErrorDetails(null); }}>
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="upload-form" encType="multipart/form-data">
