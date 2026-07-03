@@ -1,0 +1,79 @@
+/* ============================================
+   FORMULÁRIOS
+   ============================================ */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.form-group label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+.form-group small {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+}
+
+.input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius);
+  font-size: var(--font-size-base);
+  transition: var(--transition);
+  background: var(--color-white);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+.input:disabled {
+  background: var(--color-gray-50);
+  cursor: not-allowed;
+}
+.input-error {
+  border-color: var(--color-danger);
+}
+.input-error:focus {
+  box-shadow: 0 0 0 3px var(--color-danger-bg);
+}
+
+.input-wrapper {
+  position: relative;
+}
+.input-wrapper .input-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-gray-400);
+}
+.input-wrapper .input {
+  padding-left: calc(var(--space-3) + 1.5rem);
+}
+
+textarea.input {
+  min-height: 100px;
+  resize: vertical;
+}
+textarea.input-sm { min-height: 60px; }
+textarea.input-lg { min-height: 150px; }
+
+.search-box {
+  position: relative;
+  max-width: 320px;
+}
+.search-box .search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-gray-400);
+}
+.search-box .search-input {
+  padding-left: calc(var(--space-3) + 1.5rem);
+}

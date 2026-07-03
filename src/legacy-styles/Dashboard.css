@@ -1,0 +1,31 @@
+.dashboard-container {
+  padding: 2rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+stat-card and rest...

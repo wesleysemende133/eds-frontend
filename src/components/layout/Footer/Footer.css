@@ -1,0 +1,2 @@
+.eds-footer { padding: var(--space-4); border-top:1px solid var(--color-gray-100); background: var(--color-white) }
+.eds-footer__inner { max-width: var(--max-width); margin: 0 auto; padding: 0 1rem; color: var(--color-gray-500); font-size: var(--font-size-sm) }

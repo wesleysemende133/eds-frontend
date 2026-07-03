@@ -1,6 +1,7 @@
+// src/pages/Invoices.jsx
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { FileText, Trash2, AlertCircle, Filter, Eye } from 'lucide-react'
+import { FileText, Trash2, AlertCircle, Filter, Eye, X } from 'lucide-react'
 import { useInvoices } from '../hooks/useInvoices'
 import './Invoices.css'
 
@@ -11,6 +12,8 @@ export const Invoices = () => {
   const [error, setError] = useState(null)
   const [filter, setFilter] = useState('ALL')
   const [deleteLoading, setDeleteLoading] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [invoiceToDelete, setInvoiceToDelete] = useState(null)
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -20,12 +23,10 @@ export const Invoices = () => {
       const statusParam = filter === 'ALL' ? null : filter
       const data = await getInvoices(statusParam)
       
-      console.log('📋 Faturas recebidas:', data) // 👈 Debug
-      
       const listaFaturas = Array.isArray(data) ? data : data?.content || []
       setInvoices(listaFaturas)
     } catch (err) {
-      console.error('Erro ao buscar faturas na API Java:', err)
+      console.error('Erro ao buscar faturas:', err)
       setError(err.friendlyMessage || 'Erro ao carregar faturas. Verifique se o servidor está online.')
     } finally {
       setLoading(false)
@@ -36,25 +37,42 @@ export const Invoices = () => {
     fetchInvoices()
   }, [fetchInvoices])
 
-  const handleDelete = async (id) => {
-    if (!id || !window.confirm('Tem certeza de que deseja deletar permanentemente esta fatura?')) {
-      return
-    }
+  // ✅ Abrir modal de confirmação
+  const handleDeleteClick = (id) => {
+    setInvoiceToDelete(id)
+    setShowDeleteModal(true)
+  }
+
+  // ✅ Confirmar exclusão
+  const confirmDelete = async () => {
+    if (!invoiceToDelete) return
 
     try {
-      setDeleteLoading(id)
+      setDeleteLoading(invoiceToDelete)
       setError(null)
-      await deleteInvoice(id)
-      setInvoices((prev) => prev.filter((inv) => inv.id !== id))
+      
+      await deleteInvoice(invoiceToDelete)
+      
+      setInvoices((prev) => prev.filter((inv) => inv.id !== invoiceToDelete))
+      
+      setShowDeleteModal(false)
+      setInvoiceToDelete(null)
+      
     } catch (err) {
-      console.error('Erro ao deletar fatura no ControladorFatura:', err)
+      console.error('Erro ao deletar fatura:', err)
       setError(err.friendlyMessage || 'Não foi possível excluir a fatura.')
+      await fetchInvoices()
     } finally {
       setDeleteLoading(null)
     }
   }
 
-  // ✅ CORRIGIDO: Adicionar todos os status possíveis
+  // ✅ Cancelar exclusão
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setInvoiceToDelete(null)
+  }
+
   const getStatusBadge = (status) => {
     const statusNormalizado = status?.toUpperCase()
     const statusMap = {
@@ -71,7 +89,6 @@ export const Invoices = () => {
     return statusMap[statusNormalizado] || { label: status || 'Desconhecido', className: 'badge-default' }
   }
 
-  // ✅ Função para formatar moeda
   const formatarMoeda = (valor) => {
     if (valor === undefined || valor === null) return 'MT 0,00'
     return `MT ${valor.toLocaleString('pt-MZ', { 
@@ -80,7 +97,6 @@ export const Invoices = () => {
     })}`
   }
 
-  // ✅ Função para formatar data
   const formatarData = (dataString) => {
     if (!dataString) return '-'
     try {
@@ -96,7 +112,6 @@ export const Invoices = () => {
     }
   }
 
-  // ✅ Função para formatar data e hora
   const formatarDataHora = (dataString) => {
     if (!dataString) return '-'
     try {
@@ -116,6 +131,41 @@ export const Invoices = () => {
 
   return (
     <div className="invoices-container">
+      {/* ✅ MODAL DE CONFIRMAÇÃO */}
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={cancelDelete}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirmar Exclusão</h3>
+              <button className="modal-close" onClick={cancelDelete}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Tem certeza de que deseja excluir permanentemente esta fatura?</p>
+              <p className="modal-warning">⚠️ Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel" 
+                onClick={cancelDelete}
+                disabled={deleteLoading === invoiceToDelete}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn-danger" 
+                onClick={confirmDelete}
+                disabled={deleteLoading === invoiceToDelete}
+              >
+                {deleteLoading === invoiceToDelete ? 'Excluindo...' : 'Sim, Excluir'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
       <div className="invoices-header">
         <h1>Gerenciar Faturas</h1>
         <Link to="/faturas/upload" className="btn-upload">
@@ -123,13 +173,14 @@ export const Invoices = () => {
         </Link>
       </div>
 
+      {/* FILTROS */}
       <div className="filters-section">
         <div className="filter-group">
           <Filter size={20} />
           <span>Filtrar por Status:</span>
         </div>
         <div className="filter-buttons">
-          {['ALL', 'AGUARDANDO_APROVACAO', 'PROCESSANDO', 'PROCESSADO', 'APROVADO', 'REJEITADO', 'ERRO_EXTRACAO'].map((status) => (
+          {['ALL', 'AGUARDANDO_APROVACAO', 'APROVADO', 'REJEITADO', 'CANCELADO', 'PAGO'].map((status) => (
             <button
               key={status}
               className={`filter-btn ${filter === status ? 'active' : ''}`}
@@ -142,6 +193,7 @@ export const Invoices = () => {
         </div>
       </div>
 
+      {/* ERROR */}
       {error && (
         <div className="alert alert-error" role="alert">
           <AlertCircle size={20} />
@@ -149,12 +201,14 @@ export const Invoices = () => {
         </div>
       )}
 
+      {/* LOADING */}
       {loading && (
         <div className="loading-container">
           <p className="loading-text">Buscando documentos no banco de dados corporativo...</p>
         </div>
       )}
 
+      {/* EMPTY STATE */}
       {!loading && !error && invoices.length === 0 && (
         <div className="empty-state">
           <FileText size={48} />
@@ -166,6 +220,7 @@ export const Invoices = () => {
         </div>
       )}
 
+      {/* TABLE */}
       {!loading && !error && invoices.length > 0 && (
         <div className="table-responsive">
           <table className="invoices-table">
@@ -191,23 +246,18 @@ export const Invoices = () => {
                       {invoice.id ? `${invoice.id.slice(0, 8)}...` : 'N/A'}
                     </td>
                     <td className="cell-numero">
-                      {/* ✅ CORRIGIDO: usar numeroFatura */}
                       {invoice.numeroFatura || 'Não extraído'}
                     </td>
                     <td className="cell-fornecedor">
-                      {/* ✅ CORRIGIDO: usar fornecedor */}
                       {invoice.fornecedor || '-'}
                     </td>
                     <td className="cell-valor">
-                      {/* ✅ CORRIGIDO: usar valorTotal */}
                       {formatarMoeda(invoice.valorTotal)}
                     </td>
                     <td>
-                      {/* ✅ ADICIONADO: dataFatura */}
                       {formatarData(invoice.dataFatura)}
                     </td>
                     <td>
-                      {/* ✅ CORRIGIDO: dataVencimento */}
                       {invoice.dataVencimento ? formatarData(invoice.dataVencimento) : '-'}
                     </td>
                     <td>
@@ -216,7 +266,6 @@ export const Invoices = () => {
                       </span>
                     </td>
                     <td className="cell-date">
-                      {/* ✅ CORRIGIDO: usar dataCriacao */}
                       {formatarDataHora(invoice.dataCriacao)}
                     </td>
                     <td className="cell-actions">
@@ -230,7 +279,7 @@ export const Invoices = () => {
                       </Link>
                       <button
                         className="action-delete"
-                        onClick={() => handleDelete(invoice.id)}
+                        onClick={() => handleDeleteClick(invoice.id)}
                         disabled={deleteLoading === invoice.id}
                         title="Deletar fatura do sistema"
                       >
