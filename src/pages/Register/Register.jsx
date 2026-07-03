@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
@@ -28,24 +29,27 @@ export const Register = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (formData.senha !== formData.confirmarSenha) {
-      setSenhaError('As senhas não coincidem');
-      return;
-    }
+  e.preventDefault();
+  
+  console.log('🔄 Formulário submetido!');
+  console.log('📝 Dados:', formData);
+  
+  if (formData.senha !== formData.confirmarSenha) {
+    setSenhaError('As senhas não coincidem');
+    return;
+  }
 
-    try {
-      await register({
-        nome: formData.nome,
-        email: formData.email,
-        senha: formData.senha
-      });
-      navigate('/');
-    } catch (err) {
-      // Erro já está no estado do useAuth
-    }
-  };
+  try {
+    await register({
+      nome: formData.nome,
+      email: formData.email,
+      senha: formData.senha
+    });
+    navigate('/');
+  } catch (err) {
+    console.error('❌ Erro no registo:', err);
+  }
+};
 
   return (
     <div className="auth-container">
@@ -136,4 +140,3 @@ export const Register = () => {
   );
 };
 
-export default Register;

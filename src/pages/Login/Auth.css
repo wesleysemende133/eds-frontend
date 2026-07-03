@@ -1,3 +1,4 @@
+
 /* ============================================
    LOGIN & REGISTER - ESTILOS PROFISSIONAIS
    ============================================ */
@@ -59,6 +60,20 @@
   margin-bottom: var(--space-6);
 }
 
+.auth-header .brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--space-3);
+}
+
 .auth-header h1 {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
@@ -73,25 +88,15 @@
   margin: 0;
 }
 
-.auth-header .brand-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-  color: white;
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: var(--space-3);
-}
-
 /* ---------- FORM ---------- */
 .auth-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.auth-form .form-group {
+  margin-bottom: 0;
 }
 
 /* ---------- DIVIDER ---------- */
@@ -134,11 +139,6 @@
   text-decoration: underline;
 }
 
-/* ---------- FORM GROUP ---------- */
-.auth-form .form-group {
-  margin-bottom: 0;
-}
-
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 640px) {
   .auth-card {
@@ -172,6 +172,10 @@
 }
 
 /* ---------- ANIMAÇÃO ---------- */
+.auth-card {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -181,8 +185,4 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.auth-card {
-  animation: fadeInUp 0.5s ease forwards;
 }

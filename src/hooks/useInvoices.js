@@ -1,68 +1,82 @@
 // src/hooks/useInvoices.js
-import { useCallback } from 'react'
-import api from '../services/api'
+import { useCallback } from 'react';
+import api from '../services/api';
 
 export const useInvoices = () => {
   
-  // 1. Listar faturas
   const getInvoices = useCallback(async (status = null) => {
     try {
-      const url = status ? `/faturas/status/${status}` : '/faturas'
-      const { data } = await api.get(url)
-      return data
+      const url = status ? `/faturas/status/${status}` : '/faturas';
+      console.log('📋 [getInvoices] URL:', url);
+      const { data } = await api.get(url);
+      console.log('📋 [getInvoices] Dados recebidos:', data);
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [getInvoices] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 2. Buscar fatura por ID
   const getInvoiceById = useCallback(async (id) => {
     try {
-      const { data } = await api.get(`/faturas/${id}`)
-      return data
+      console.log('🔍 [getInvoiceById] Buscando fatura ID:', id);
+      const { data } = await api.get(`/faturas/${id}`);
+      console.log('🔍 [getInvoiceById] Dados recebidos:', data);
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [getInvoiceById] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 3. Upload de fatura
+  // ✅ UPLOAD CORRIGIDO
   const uploadInvoice = useCallback(async (formData) => {
     try {
-      const { data } = await api.post('/faturas/upload', formData)
-      return data
+      console.log('📤 [uploadInvoice] Iniciando upload...');
+      
+      const { data } = await api.post('/faturas/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      console.log('📤 [uploadInvoice] Upload concluído:', data);
+      return data;
     } catch (err) {
-      throw err 
+      console.error('❌ [uploadInvoice] Erro:', err);
+      console.error('❌ Detalhes:', err.response?.data);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 4. Deletar fatura
   const deleteInvoice = useCallback(async (id) => {
+    console.log('🗑️ [deleteInvoice] Iniciando exclusão da fatura ID:', id);
+    
     try {
-      const { data } = await api.delete(`/faturas/${id}`)
-      return data
+      const response = await api.delete(`/faturas/${id}`);
+      console.log('🗑️ [deleteInvoice] Resposta:', response.status);
+      return true;
     } catch (err) {
-      throw err
+      console.error('❌ [deleteInvoice] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // ============================================================
-  // 🔥 NOVOS MÉTODOS DE AVALIAÇÃO
-  // ============================================================
-
-  // 5. Avaliar fatura (endpoint genérico)
+  // Avaliar fatura
   const avaliarInvoice = useCallback(async (id, acao, motivo = '') => {
     try {
       const { data } = await api.post(`/faturas/${id}/avaliar`, {
         acao: acao,
         motivo: motivo || undefined
-      })
-      return data
+      });
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [avaliarInvoice] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 6. Aprovar fatura
+  // Aprovar fatura
   const aprovarInvoice = useCallback(async (id, observacao = '') => {
     try {
       const { data } = await api.post(
@@ -73,14 +87,15 @@ export const useInvoices = () => {
             'Content-Type': 'application/json',
           },
         }
-      )
-      return data
+      );
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [aprovarInvoice] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 7. Rejeitar fatura
+  // Rejeitar fatura
   const rejeitarInvoice = useCallback(async (id, motivo = '') => {
     try {
       const { data } = await api.post(
@@ -91,14 +106,15 @@ export const useInvoices = () => {
             'Content-Type': 'application/json',
           },
         }
-      )
-      return data
+      );
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [rejeitarInvoice] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 8. Efetivar fatura
+  // Efetivar fatura
   const efetivarInvoice = useCallback(async (id, observacao = '') => {
     try {
       const { data } = await api.post(
@@ -109,14 +125,15 @@ export const useInvoices = () => {
             'Content-Type': 'application/json',
           },
         }
-      )
-      return data
+      );
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [efetivarInvoice] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 9. Cancelar fatura
+  // Cancelar fatura
   const cancelarInvoice = useCallback(async (id, motivo = '') => {
     try {
       const { data } = await api.post(
@@ -127,22 +144,24 @@ export const useInvoices = () => {
             'Content-Type': 'application/json',
           },
         }
-      )
-      return data
+      );
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [cancelarInvoice] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
-  // 10. Reprocessar fatura
+  // Reprocessar fatura
   const reprocessarInvoice = useCallback(async (id) => {
     try {
-      const { data } = await api.post(`/faturas/${id}/reprocessar`)
-      return data
+      const { data } = await api.post(`/faturas/${id}/reprocessar`);
+      return data;
     } catch (err) {
-      throw err
+      console.error('❌ [reprocessarInvoice] Erro:', err);
+      throw err;
     }
-  }, [])
+  }, []);
 
   return {
     getInvoices,
@@ -155,5 +174,7 @@ export const useInvoices = () => {
     efetivarInvoice,
     cancelarInvoice,
     reprocessarInvoice,
-  }
-}
+  };
+};
+
+export default useInvoices;
