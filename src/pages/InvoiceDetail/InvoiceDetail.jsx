@@ -528,7 +528,7 @@ export const InvoiceDetail = () => {
               )}
               {invoice.errosValidacao && (
                 <p className="description error-text">
-                  <strong>Erros de Validação:</strong> {invoice.errosValidacao}
+                  <strong>Validação:</strong> {invoice.errosValidacao}
                 </p>
               )}
             </Card>
