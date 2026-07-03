@@ -1,8 +1,27 @@
-// src/components/InvoiceDetail.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Trash2, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Download, 
+  Trash2, 
+  AlertCircle, 
+  CheckCircle,
+  FileText,
+  Building,
+  Calendar,
+  DollarSign,
+  User,
+  Hash,
+  Tag,
+  X
+} from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
+import { Button } from '../../components/common/Button';
+import { Card } from '../../components/common/Card';
+import { Badge } from '../../components/common/Badge';
+import { Modal } from '../../components/common/Modal';
+import { Alert } from '../../components/common/Alert';
+import { Spinner } from '../../components/common/Spinner';
 import { InvoiceActions } from '../../components/shared/InvoiceActions';
 import './InvoiceDetail.css';
 
@@ -18,32 +37,42 @@ export const InvoiceDetail = () => {
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const fetchInvoice = async () => {
+  const fetchInvoice = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getInvoiceById(id);
+      
+      if (!data) {
+        setError('Fatura não encontrada');
+        return;
+      }
+      
       setInvoice(data);
     } catch (err) {
       console.error('Erro ao buscar fatura:', err);
-      setError(err.friendlyMessage || 'Erro ao carregar os detalhes da fatura.');
+      
+      if (err.response?.status === 404) {
+        setError('Fatura não encontrada ou já foi removida');
+        setTimeout(() => navigate('/faturas'), 2000);
+      } else {
+        setError(err.friendlyMessage || 'Erro ao carregar os detalhes da fatura.');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, getInvoiceById, navigate]);
 
   useEffect(() => {
     if (id) {
       fetchInvoice();
     }
-  }, [id]);
+  }, [id, fetchInvoice]);
 
-  // ✅ Abrir modal de confirmação
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   };
 
-  // ✅ Confirmar exclusão
   const confirmDelete = async () => {
     setShowDeleteModal(false);
     
@@ -52,7 +81,6 @@ export const InvoiceDetail = () => {
       setError(null);
       
       await deleteInvoice(id);
-      
       setDeleteSuccess(true);
       
       setTimeout(() => {
@@ -66,25 +94,23 @@ export const InvoiceDetail = () => {
     }
   };
 
-  // ✅ Cancelar exclusão
   const cancelDelete = () => {
     setShowDeleteModal(false);
   };
 
   const getStatusProps = (status) => {
-    const statusNormalizado = status?.toUpperCase();
     const statusMap = {
-      'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', className: 'badge-warning' },
-      'PROCESSANDO': { label: 'Processando', className: 'badge-info' },
-      'PROCESSADO': { label: 'Processado', className: 'badge-success' },
-      'APROVADO': { label: 'Aprovado', className: 'badge-success' },
-      'REJEITADO': { label: 'Rejeitado', className: 'badge-danger' },
-      'ERRO_EXTRACAO': { label: 'Erro na Extração', className: 'badge-danger' },
-      'CANCELADO': { label: 'Cancelado', className: 'badge-danger' },
-      'PAGO': { label: 'Pago', className: 'badge-success' },
-      'PENDENTE': { label: 'Pendente', className: 'badge-warning' },
+      'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', variant: 'warning' },
+      'PROCESSANDO': { label: 'Processando', variant: 'info' },
+      'PROCESSADO': { label: 'Processado', variant: 'success' },
+      'APROVADO': { label: 'Aprovado', variant: 'success' },
+      'REJEITADO': { label: 'Rejeitado', variant: 'danger' },
+      'ERRO_EXTRACAO': { label: 'Erro na Extração', variant: 'danger' },
+      'CANCELADO': { label: 'Cancelado', variant: 'danger' },
+      'PAGO': { label: 'Pago', variant: 'success' },
+      'PENDENTE': { label: 'Pendente', variant: 'warning' },
     };
-    return statusMap[statusNormalizado] || { label: status || 'Desconhecido', className: 'badge-default' };
+    return statusMap[status?.toUpperCase()] || { label: status || 'Desconhecido', variant: 'default' };
   };
 
   const formatarData = (dataString) => {
@@ -129,8 +155,8 @@ export const InvoiceDetail = () => {
 
   if (loading) {
     return (
-      <div className="invoice-detail-container" role="status">
-        <p className="loading-text">Carregando detalhes da fatura...</p>
+      <div className="invoice-detail-container">
+        <Spinner size="lg" label="Carregando detalhes da fatura..." />
       </div>
     );
   }
@@ -138,14 +164,14 @@ export const InvoiceDetail = () => {
   if (error || !invoice) {
     return (
       <div className="invoice-detail-container">
-        <button onClick={() => navigate('/faturas')} className="btn-back">
+        <Button variant="ghost" onClick={() => navigate('/faturas')}>
           <ArrowLeft size={20} />
           Voltar para listagem
-        </button>
-        <div className="alert alert-error" role="alert">
+        </Button>
+        <Alert variant="danger">
           <AlertCircle size={20} />
-          <span>{error || 'Fatura não encontrada.'}</span>
-        </div>
+          {error || 'Fatura não encontrada.'}
+        </Alert>
       </div>
     );
   }
@@ -154,129 +180,128 @@ export const InvoiceDetail = () => {
 
   return (
     <div className="invoice-detail-container">
-      {/* ✅ MODAL DE CONFIRMAÇÃO */}
-      {showDeleteModal && (
-        <div className="modal-overlay" onClick={cancelDelete}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Confirmar Exclusão</h3>
-              <button className="modal-close" onClick={cancelDelete}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>Tem certeza de que deseja excluir permanentemente esta fatura?</p>
-              <p className="modal-warning">⚠️ Esta ação não pode ser desfeita.</p>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn-cancel" 
-                onClick={cancelDelete}
-                disabled={deleteLoading}
-              >
-                Cancelar
-              </button>
-              <button 
-                className="btn-danger" 
-                onClick={confirmDelete}
-                disabled={deleteLoading}
-              >
-                {deleteLoading ? 'Excluindo...' : 'Sim, Excluir'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal de Confirmação */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={cancelDelete}
+        title="Confirmar Exclusão"
+        footer={
+          <>
+            <Button variant="secondary" onClick={cancelDelete} disabled={deleteLoading}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={confirmDelete}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? 'Excluindo...' : 'Confirmar Exclusão'}
+            </Button>
+          </>
+        }
+      >
+        <p>Tem certeza de que deseja excluir permanentemente esta fatura?</p>
+        <p className="modal-warning">⚠️ Esta ação não pode ser desfeita.</p>
+      </Modal>
 
       {/* HEADER */}
       <div className="detail-header">
-        <button 
-          onClick={() => navigate('/faturas')} 
-          className="btn-back"
-          disabled={deleteLoading}
-        >
+        <Button variant="ghost" onClick={() => navigate('/faturas')} disabled={deleteLoading}>
           <ArrowLeft size={20} />
           Voltar
-        </button>
+        </Button>
         <h1>Detalhes da Fatura</h1>
         
         <div className="header-actions">
-          <button 
-            className="btn-icon" 
-            title="Baixar documento PDF original" 
-            disabled={deleteLoading}
-          >
-            <Download size={20} />
-          </button>
-          <button
+          <Button variant="ghost" size="sm" disabled={deleteLoading} title="Baixar documento">
+            <Download size={18} />
+            Baixar
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
             onClick={handleDeleteClick}
             disabled={deleteLoading || deleteSuccess}
-            className="btn-icon btn-danger"
             title="Excluir do banco de dados"
           >
-            <Trash2 size={20} />
-          </button>
+            <Trash2 size={18} />
+            Excluir
+          </Button>
         </div>
       </div>
 
       {/* MENSAGEM DE SUCESSO */}
       {deleteSuccess && (
-        <div className="alert alert-success" role="alert">
+        <Alert variant="success">
           <CheckCircle size={20} />
-          <span>Fatura excluída com sucesso! Redirecionando...</span>
-        </div>
+          Fatura excluída com sucesso! Redirecionando...
+        </Alert>
       )}
 
       {/* CONTEÚDO */}
       <div className="detail-content">
-        {/* Metadados */}
-        <div className="info-card">
-          <h2>Metadados de Identificação</h2>
-          <div className="info-grid">
-            <div className="info-row">
-              <label>ID Universal (UUID)</label>
-              <span className="value-id">{invoice.id || '-'}</span>
+        {/* Status e Metadados */}
+        <Card>
+          <div className="detail-status">
+            <div>
+              <p className="detail-label">Status</p>
+              <p className="detail-value">
+                <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+              </p>
             </div>
-            <div className="info-row">
-              <label>Número do Documento</label>
-              <span>{invoice.numeroFatura || 'Não identificado'}</span>
+            <div>
+              <p className="detail-label">ID Universal</p>
+              <p className="detail-value value-id">{invoice.id || '-'}</p>
             </div>
-            <div className="info-row">
-              <label>Estado do Processamento</label>
-              <span className={`badge ${statusInfo.className}`}>
-                {statusInfo.label}
-              </span>
-            </div>
-            <div className="info-row">
-              <label>Data de Recebimento</label>
-              <span>{formatarDataHora(invoice.dataCriacao)}</span>
+            <div>
+              <p className="detail-label">Data de Recebimento</p>
+              <p className="detail-value">{formatarDataHora(invoice.dataCriacao)}</p>
             </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Financeiros */}
-        <div className="info-card">
-          <h2>Dados Contábeis e Financeiros</h2>
+        {/* Metadados de Identificação */}
+        <Card title="Metadados de Identificação">
           <div className="info-grid">
             <div className="info-row">
-              <label>Valor Nominal</label>
-              <span className="value-amount">{formatarMoeda(invoice.valorTotal)}</span>
+              <label>Número do Documento</label>
+              <span className="numero-destaque">{invoice.numeroFatura || 'Não identificado'}</span>
             </div>
             <div className="info-row">
-              <label>Valor Base</label>
-              <span>{formatarMoeda(invoice.valorBase)}</span>
+              <label>Categoria</label>
+              <span className="categoria-badge">{invoice.categoria || 'Não definida'}</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* Dados Financeiros */}
+        <Card title="Dados Financeiros">
+          <div className="finance-grid">
+            <div className="finance-item">
+              <p className="finance-label">Valor Base</p>
+              <p className="finance-value">{formatarMoeda(invoice.valorBase)}</p>
+            </div>
+            <div className="finance-item">
+              <p className="finance-label">IVA</p>
+              <p className="finance-value">{formatarMoeda(invoice.valorIva)}</p>
+            </div>
+            <div className="finance-item finance-total">
+              <p className="finance-label">Valor Total</p>
+              <p className="finance-value total">{formatarMoeda(invoice.valorTotal)}</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Fornecedor */}
+        <Card title="Fornecedor">
+          <div className="info-grid">
+            <div className="info-row">
+              <label>Nome</label>
+              <span className="fornecedor-nome">{invoice.fornecedor || 'Não extraído'}</span>
             </div>
             <div className="info-row">
-              <label>Valor IVA</label>
-              <span>{formatarMoeda(invoice.valorIva)}</span>
-            </div>
-            <div className="info-row">
-              <label>Entidade Emissora (Fornecedor)</label>
-              <span>{invoice.fornecedor || 'Não extraído'}</span>
-            </div>
-            <div className="info-row">
-              <label>NUIT Fornecedor</label>
-              <span>{invoice.nuitFornecedor || 'Não identificado'}</span>
+              <label>NUIT</label>
+              <span className="nuit-value">{invoice.nuitFornecedor || 'Não identificado'}</span>
             </div>
             <div className="info-row">
               <label>Data da Fatura</label>
@@ -286,17 +311,12 @@ export const InvoiceDetail = () => {
               <label>Data de Vencimento</label>
               <span>{invoice.dataVencimento ? formatarData(invoice.dataVencimento) : 'Não informada'}</span>
             </div>
-            <div className="info-row">
-              <label>Categoria</label>
-              <span>{invoice.categoria || 'Não definida'}</span>
-            </div>
           </div>
-        </div>
+        </Card>
 
         {/* Observações */}
         {(invoice.descricao || invoice.errosValidacao) && (
-          <div className="info-card">
-            <h2>Observações</h2>
+          <Card title="Observações">
             {invoice.descricao && (
               <p className="description"><strong>Descrição:</strong> {invoice.descricao}</p>
             )}
@@ -305,35 +325,33 @@ export const InvoiceDetail = () => {
                 <strong>Erros de Validação:</strong> {invoice.errosValidacao}
               </p>
             )}
-          </div>
+          </Card>
         )}
 
         {/* Arquivo */}
         {(invoice.nomeArquivo || invoice.urlArquivo) && (
-          <div className="info-card">
-            <h2>Informações do Arquivo</h2>
+          <Card title="Informações do Arquivo">
             <div className="info-grid">
               <div className="info-row">
                 <label>Nome do Arquivo</label>
-                <span>{invoice.nomeArquivo || '-'}</span>
+                <span className="file-name">{invoice.nomeArquivo || '-'}</span>
               </div>
               <div className="info-row">
-                <label>Caminho do Arquivo</label>
+                <label>Caminho</label>
                 <span className="file-path">{invoice.urlArquivo || '-'}</span>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Ações */}
-        <div className="info-card">
-          <h2>Ações</h2>
+        <Card title="Ações">
           <InvoiceActions
             faturaId={invoice.id}
             status={invoice.status}
             onActionComplete={fetchInvoice}
           />
-        </div>
+        </Card>
       </div>
     </div>
   );

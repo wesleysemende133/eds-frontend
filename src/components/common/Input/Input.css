@@ -1,13 +1,20 @@
+/* ============================================
+   INPUT - ESTILOS PROFISSIONAIS
+   ============================================ */
+
 .form-group {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  width: 100%;
 }
 
 .form-label {
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-gray-700);
+  font-weight: var(--font-weight-medium);
+  color: #1e293b;
+  margin-bottom: var(--space-1);
+  letter-spacing: 0.01em;
 }
 
 .input-wrapper {
@@ -20,50 +27,127 @@
   left: var(--space-3);
   top: 50%;
   transform: translateY(-50%);
-  color: var(--color-gray-400);
+  color: #94a3b8;
   pointer-events: none;
+  transition: var(--transition);
 }
 
 .input {
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-gray-200);
+  padding-left: calc(var(--space-3) + 1.75rem);
+  border: 1.5px solid #e2e8f0;
   border-radius: var(--radius);
   font-size: var(--font-size-base);
-  color: var(--color-gray-900);
-  background: var(--color-white);
-  transition: var(--transition);
+  color: #0f172a;
+  background: #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-family);
+  line-height: 1.5;
+  min-height: 48px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.input::placeholder {
+  color: #94a3b8;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  opacity: 1;
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: #ffffff;
+}
+
+.input:focus + .input-icon {
+  color: #2563eb;
 }
 
 .input:disabled {
-  background: var(--color-gray-100);
+  background: #f1f5f9;
+  color: #64748b;
   cursor: not-allowed;
 }
 
+.input:disabled::placeholder {
+  color: #94a3b8;
+}
+
+/* ---------- ESTADO DE ERRO ---------- */
 .input-error {
-  border-color: var(--color-danger);
+  border-color: #ef4444;
 }
 
 .input-error:focus {
+  border-color: #ef4444;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .input-error-message {
-  color: var(--color-danger);
-  font-size: var(--font-size-sm);
+  color: #ef4444;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   margin-top: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
+.input-error-message::before {
+  content: '⚠️';
+  font-size: 0.75rem;
+}
+
+/* ---------- COM ÍCONE ---------- */
 .input-with-icon .input {
-  padding-left: calc(var(--space-3) + 1.5rem);
+  padding-left: calc(var(--space-3) + 2rem);
 }
 
+.input-with-icon .input-icon {
+  left: var(--space-3);
+  color: #94a3b8;
+}
+
+.input-with-icon .input:focus ~ .input-icon {
+  color: #2563eb;
+}
+
+/* ---------- SIZES ---------- */
+.input-sm {
+  min-height: 38px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.input-sm.input-with-icon .input {
+  padding-left: calc(var(--space-2) + 1.75rem);
+}
+
+.input-lg {
+  min-height: 56px;
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--font-size-lg);
+}
+
+.input-lg.input-with-icon .input {
+  padding-left: calc(var(--space-4) + 1.75rem);
+}
+
+/* ---------- FULL WIDTH ---------- */
 .w-full {
   width: 100%;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 768px) {
+  .input {
+    min-height: 44px;
+    font-size: var(--font-size-sm);
+    padding: var(--space-2) var(--space-3);
+    padding-left: calc(var(--space-2) + 1.75rem);
+  }
 }

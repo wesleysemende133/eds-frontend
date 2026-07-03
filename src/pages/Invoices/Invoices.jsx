@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';  // ✅ Adicionar useNavigate
 import { 
   FileText, 
   Trash2, 
@@ -9,7 +9,7 @@ import {
   Upload,
   RefreshCw,
   Search,
-  X
+  CheckCircle
 } from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
@@ -19,10 +19,10 @@ import { Table } from '../../components/common/Table';
 import { Modal } from '../../components/common/Modal';
 import { Alert } from '../../components/common/Alert';
 import { Spinner } from '../../components/common/Spinner';
-import { Input } from '../../components/common/Input';
 import './Invoices.css';
 
 export const Invoices = () => {
+  const navigate = useNavigate();  // ✅ Hook de navegação
   const { getInvoices, deleteInvoice } = useInvoices();
   
   const [invoices, setInvoices] = useState([]);
@@ -57,7 +57,8 @@ export const Invoices = () => {
     fetchInvoices();
   }, [fetchInvoices]);
 
-  const handleDeleteClick = (id) => {
+  const handleDeleteClick = (e, id) => {
+    e.stopPropagation();
     setInvoiceToDelete(id);
     setShowDeleteModal(true);
   };
@@ -90,6 +91,11 @@ export const Invoices = () => {
   const cancelDelete = () => {
     setShowDeleteModal(false);
     setInvoiceToDelete(null);
+  };
+
+  // ✅ Função para navegar para os detalhes (transição fluida)
+  const handleRowClick = (row) => {
+    navigate(`/faturas/${row.id}`);
   };
 
   const filteredInvoices = invoices.filter(invoice => {
@@ -190,7 +196,7 @@ export const Invoices = () => {
           </Link>
           <button
             className="action-delete"
-            onClick={() => handleDeleteClick(row.id)}
+            onClick={(e) => handleDeleteClick(e, row.id)}
             disabled={deleteLoading === row.id}
           >
             <Trash2 size={16} />
@@ -350,7 +356,7 @@ export const Invoices = () => {
           <Table
             columns={tableColumns}
             data={filteredInvoices}
-            onRowClick={(row) => window.location.href = `/faturas/${row.id}`}
+            onRowClick={handleRowClick}  // ✅ Usa navigate em vez de window.location
           />
         </Card>
       )}

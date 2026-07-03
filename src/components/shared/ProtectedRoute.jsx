@@ -1,12 +1,17 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom';
 import authStore from '../../store/authStore';
 
 export const ProtectedRoute = ({ children }) => {
-  const { token } = authStore()
+  const { token } = authStore();
+  
+  console.log('🔒 ProtectedRoute - Token:', token ? '✅ Existe' : '❌ Não existe');
 
   if (!token) {
-    return <Navigate to="/login" replace />
+    console.log('🔒 Redirecionando para login...');
+    return <Navigate to="/login" replace />;
   }
 
-  return children
-}
+  return children;
+};
+
+export default ProtectedRoute;
