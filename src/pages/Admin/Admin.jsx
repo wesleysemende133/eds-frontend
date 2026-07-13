@@ -62,6 +62,7 @@ const Admin = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear().toString());
   
   const [metrics, setMetrics] = useState(null);
   const [invoices, setInvoices] = useState([]);
@@ -202,21 +203,23 @@ const Admin = () => {
       change: '+12%', 
       changeType: 'up', 
       icon: '📄',
-      onClick: () => navigate('/admin/faturas')
+      onClick: () => setActiveTab('faturas')
     },
     { 
       label: 'Faturas Pendentes', 
       value: metrics.faturasPorStatus?.AGUARDANDO_APROVACAO || 0, 
       change: '-5%', 
       changeType: 'down', 
-      icon: '⏳' 
+      icon: '⏳',
+      onClick: () => { setStatusFilter('AGUARDANDO_APROVACAO'); setActiveTab('faturas'); }
     },
     { 
       label: 'Aprovadas', 
       value: metrics.faturasPorStatus?.APROVADO || 0, 
       change: '+8%', 
       changeType: 'up', 
-      icon: '✅' 
+      icon: '✅',
+      onClick: () => { setStatusFilter('APROVADO'); setActiveTab('faturas'); }
     },
     { 
       label: 'Valor Total', 
@@ -226,6 +229,44 @@ const Admin = () => {
       icon: '💰' 
     },
   ] : [];
+
+  // ============================================================
+  // FUNÇÕES AUXILIARES PARA RELATÓRIOS
+  // ============================================================
+
+  const getMesLabel = (mesStr) => {
+    const meses = {
+      '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
+      '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Ago',
+      '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez'
+    };
+    const mesNum = mesStr?.split('-')[1];
+    return meses[mesNum] || mesStr;
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      'AGUARDANDO_APROVACAO': 'Aguardando Aprovação',
+      'APROVADO': 'Aprovado',
+      'REJEITADO': 'Rejeitado',
+      'PAGO': 'Pago',
+      'CANCELADO': 'Cancelado',
+      'PENDENTE': 'Pendente',
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusBadgeClass = (status) => {
+    const map = {
+      'AGUARDANDO_APROVACAO': 'pending',
+      'APROVADO': 'approved',
+      'REJEITADO': 'rejected',
+      'PAGO': 'efetivado',
+      'CANCELADO': 'canceled',
+      'PENDENTE': 'pending',
+    };
+    return map[status] || 'pending';
+  };
 
   // ============================================================
   // RENDER
@@ -338,7 +379,9 @@ const Admin = () => {
         </button>
       </div>
 
-      {/* TAB: FATURAS */}
+      {/* ============================================================
+      TAB: FATURAS
+      ============================================================ */}
       <div className={`admin-tab-content ${activeTab === 'faturas' ? 'active' : ''}`}>
         <div className="admin-card">
           <div className="admin-card-header">
@@ -428,7 +471,9 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* TAB: USUÁRIOS */}
+      {/* ============================================================
+      TAB: USUÁRIOS
+      ============================================================ */}
       <div className={`admin-tab-content ${activeTab === 'usuarios' ? 'active' : ''}`}>
         <div className="admin-card">
           <div className="admin-card-header">
@@ -495,38 +540,69 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* TAB: RELATÓRIOS */}
+      {/* ============================================================
+      TAB: RELATÓRIOS - CONSUMINDO DADOS REAIS
+      ============================================================ */}
       <div className={`admin-tab-content ${activeTab === 'relatorios' ? 'active' : ''}`}>
         <div className="admin-card">
           <div className="admin-card-header">
             <h3>📊 Relatórios</h3>
             <div className="filters">
-              <select defaultValue="2024">
+              <select 
+                value={anoSelecionado} 
+                onChange={(e) => setAnoSelecionado(e.target.value)}
+              >
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
                 <option value="2024">2024</option>
-                <option value="2023">2023</option>
               </select>
             </div>
           </div>
           <div className="admin-card-body">
             <div className="admin-chart-container">
+              
+              {/* LEFT - Faturas por Mês */}
               <div className="admin-chart-bars">
-                {metrics?.faturasPorStatus && Object.entries(metrics.faturasPorStatus).map(([status, count]) => (
-                  <div key={status} className="admin-chart-bar-row">
-                    <span className="label">{getStatusLabel(status)}</span>
-                    <div className="track">
-                      <div
-                        className={`fill ${status === 'APROVADO' ? 'green' : status === 'REJEITADO' ? 'red' : 'blue'}`}
-                        style={{ width: `${metrics.totalFaturas > 0 ? (count / metrics.totalFaturas) * 100 : 0}%` }}
-                      />
-                    </div>
-                    <span className="value">{count}</span>
-                  </div>
-                ))}
+                <h4>📈 Faturas por Mês</h4>
+                {metrics?.faturasPorMes ? (
+                  (() => {
+                    const filteredEntries = Object.entries(metrics.faturasPorMes)
+                      .filter(([mes]) => mes.startsWith(anoSelecionado));
+                    
+                    if (filteredEntries.length === 0) {
+                      return <p className="text-muted">Sem dados para {anoSelecionado}</p>;
+                    }
+                    
+                    const maxValue = Math.max(...filteredEntries.map(([, count]) => count));
+                    
+                    return filteredEntries.map(([mes, count]) => {
+                      const mesLabel = getMesLabel(mes);
+                      const percent = maxValue > 0 ? (count / maxValue) * 100 : 0;
+                      
+                      return (
+                        <div key={mes} className="admin-chart-bar-row">
+                          <span className="label">{mesLabel}</span>
+                          <div className="track">
+                            <div
+                              className="fill blue"
+                              style={{ width: `${Math.max(percent, 5)}%` }}
+                            />
+                          </div>
+                          <span className="value">{count}</span>
+                        </div>
+                      );
+                    });
+                  })()
+                ) : (
+                  <p className="text-muted">Sem dados para exibir</p>
+                )}
               </div>
+
+              {/* RIGHT - Resumo */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className="admin-card" style={{ marginBottom: 0 }}>
                   <div className="admin-card-header" style={{ padding: 'var(--spacing-md)' }}>
-                    <h4>📈 Resumo</h4>
+                    <h4>📈 Resumo Geral</h4>
                   </div>
                   <div className="admin-card-body" style={{ padding: 'var(--spacing-md)' }}>
                     <div className="flex justify-between">
@@ -545,9 +621,92 @@ const Admin = () => {
                           : 0)}
                       </span>
                     </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-muted">Total utilizadores</span>
+                      <span className="font-bold">{metrics?.totalUsuarios || 0}</span>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-muted">Taxa de aprovação</span>
+                      <span className="font-bold text-success">
+                        {metrics?.totalFaturas > 0 
+                          ? Math.round(((metrics.faturasPorStatus?.APROVADO || 0) / metrics.totalFaturas) * 100) 
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="admin-card" style={{ marginBottom: 0 }}>
+                  <div className="admin-card-header" style={{ padding: 'var(--spacing-md)' }}>
+                    <h4>🏷️ Distribuição por Status</h4>
+                  </div>
+                  <div className="admin-card-body" style={{ padding: 'var(--spacing-md)' }}>
+                    {metrics?.faturasPorStatus && Object.entries(metrics.faturasPorStatus).map(([status, count]) => (
+                      <div key={status} className="flex justify-between mt-1">
+                        <span>
+                          <span className={`admin-status-badge ${getStatusBadgeClass(status)}`}>
+                            <span className="dot" />
+                            {getStatusLabel(status)}
+                          </span>
+                        </span>
+                        <span className="font-bold">{count}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================
+      TAB: CONFIGURAÇÕES
+      ============================================================ */}
+      <div className={`admin-tab-content ${activeTab === 'configuracoes' ? 'active' : ''}`}>
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h3>⚙️ Configurações do Sistema</h3>
+          </div>
+          <div className="admin-card-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="form-group">
+                <label>Nome da Empresa</label>
+                <input type="text" defaultValue="Enterprise Document System" />
+              </div>
+              <div className="form-group">
+                <label>Email de Suporte</label>
+                <input type="email" defaultValue="suporte@eds.co.mz" />
+              </div>
+              <div className="form-group">
+                <label>Timeout de Sessão (minutos)</label>
+                <input type="number" defaultValue="30" />
+              </div>
+              <div className="form-group">
+                <label>Máximo de upload (MB)</label>
+                <input type="number" defaultValue="10" />
+              </div>
+              <div className="form-group">
+                <label>Taxa de IVA Padrão</label>
+                <input type="text" defaultValue="16%" />
+              </div>
+              <div className="form-group">
+                <label>Moeda</label>
+                <select defaultValue="MZN">
+                  <option value="MZN">MZN - Metical</option>
+                  <option value="USD">USD - Dólar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="ZAR">ZAR - Rand</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
+              <Button variant="primary" onClick={() => alert('Configurações salvas!')}>
+                💾 Salvar Configurações
+              </Button>
+              <Button variant="secondary" onClick={() => alert('Configurações restauradas!')}>
+                ↩️ Restaurar Padrão
+              </Button>
             </div>
           </div>
         </div>
@@ -586,18 +745,6 @@ const formatarData = (dataString) => {
   } catch {
     return '-';
   }
-};
-
-const getStatusLabel = (status) => {
-  const labels = {
-    'AGUARDANDO_APROVACAO': 'Aguardando Aprovação',
-    'APROVADO': 'Aprovado',
-    'REJEITADO': 'Rejeitado',
-    'PAGO': 'Pago',
-    'CANCELADO': 'Cancelado',
-    'PENDENTE': 'Pendente',
-  };
-  return labels[status] || status;
 };
 
 export default Admin;

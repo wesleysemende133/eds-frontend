@@ -332,7 +332,7 @@ export const Invoices = () => {
             </Button>
           </Link>
           <Button 
-            variant="ghost" 
+            variant="secondary" 
             onClick={fetchInvoices} 
             disabled={loading}
             className="btn-refresh"
