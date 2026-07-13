@@ -9,6 +9,7 @@ import { InvoiceUpload } from './pages/InvoiceUpload/InvoiceUpload'
 import { InvoiceDetail } from './pages/InvoiceDetail/InvoiceDetail'
 import {Profile} from './pages/Profile/Profile' // ← CORREÇÃO: SEM as chaves {}
 import authStore from './store/authStore'
+import Admin from './pages/Admin/Admin';
 
 // ... resto do código
 
@@ -70,6 +71,13 @@ function App() {
                 <Profile />
               </ProtectedRoute>
             }
+          />
+
+          <Route 
+            path="/admin" 
+            element={<Admin />
+
+            } 
           />
 
           {/* Catch All */}

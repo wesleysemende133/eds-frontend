@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';  // ✅ Adicionar useNavigate
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   FileText, 
   Trash2, 
@@ -9,7 +9,8 @@ import {
   Upload,
   RefreshCw,
   Search,
-  CheckCircle
+  CheckCircle,
+  Circle
 } from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
@@ -21,8 +22,28 @@ import { Alert } from '../../components/common/Alert';
 import { Spinner } from '../../components/common/Spinner';
 import './Invoices.css';
 
+// ============================================================
+// CONSTANTES
+// ============================================================
+
+const STATUS_MAP = {
+  AGUARDANDO_APROVACAO: { label: 'Aguardando Aprovação', variant: 'warning' },
+  APROVADO: { label: 'Aprovado', variant: 'success' },
+  REJEITADO: { label: 'Rejeitado', variant: 'danger' },
+  ERRO_EXTRACAO: { label: 'Erro na Extração', variant: 'danger' },
+  CANCELADO: { label: 'Cancelado', variant: 'danger' },
+  PAGO: { label: 'Pago', variant: 'success' },
+  PENDENTE: { label: 'Pendente', variant: 'warning' },
+};
+
+const FILTER_OPTIONS = ['ALL', 'AGUARDANDO_APROVACAO', 'APROVADO', 'REJEITADO', 'CANCELADO', 'PAGO'];
+
+// ============================================================
+// COMPONENTE PRINCIPAL
+// ============================================================
+
 export const Invoices = () => {
-  const navigate = useNavigate();  // ✅ Hook de navegação
+  const navigate = useNavigate();
   const { getInvoices, deleteInvoice } = useInvoices();
   
   const [invoices, setInvoices] = useState([]);
@@ -34,6 +55,59 @@ export const Invoices = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+
+  // ============================================================
+  // FORMATADORES (Memoizados)
+  // ============================================================
+
+  const formatarMoeda = useCallback((valor) => {
+    if (valor === undefined || valor === null) return 'MT 0,00';
+    return `MT ${Number(valor).toLocaleString('pt-MZ', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
+  }, []);
+
+  const formatarData = useCallback((dataString) => {
+    if (!dataString) return '-';
+    try {
+      const data = new Date(dataString);
+      if (isNaN(data.getTime())) return '-';
+      return data.toLocaleDateString('pt-MZ', { 
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch {
+      return '-';
+    }
+  }, []);
+
+  const formatarDataHora = useCallback((dataString) => {
+    if (!dataString) return '-';
+    try {
+      const data = new Date(dataString);
+      if (isNaN(data.getTime())) return '-';
+      return data.toLocaleDateString('pt-MZ', { 
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return '-';
+    }
+  }, []);
+
+  const getStatusBadge = useCallback((status) => {
+    const statusInfo = STATUS_MAP[status?.toUpperCase()] || { label: status || 'Desconhecido', variant: 'default' };
+    return statusInfo;
+  }, []);
+
+  // ============================================================
+  // FUNÇÕES DE BUSCA
+  // ============================================================
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -56,6 +130,10 @@ export const Invoices = () => {
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
+
+  // ============================================================
+  // HANDLERS
+  // ============================================================
 
   const handleDeleteClick = (e, id) => {
     e.stopPropagation();
@@ -93,97 +171,80 @@ export const Invoices = () => {
     setInvoiceToDelete(null);
   };
 
-  // ✅ Função para navegar para os detalhes (transição fluida)
   const handleRowClick = (row) => {
     navigate(`/faturas/${row.id}`);
   };
 
-  const filteredInvoices = invoices.filter(invoice => {
-    if (!searchTerm) return true;
+  // ============================================================
+  // DADOS COMPUTADOS (Memoizados)
+  // ============================================================
+
+  const filteredInvoices = useMemo(() => {
+    if (!searchTerm) return invoices;
+    
     const term = searchTerm.toLowerCase();
-    return (
+    return invoices.filter(invoice => (
       invoice.numeroFatura?.toLowerCase().includes(term) ||
       invoice.fornecedor?.toLowerCase().includes(term) ||
       invoice.nuitFornecedor?.includes(term)
-    );
-  });
+    ));
+  }, [invoices, searchTerm]);
 
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', variant: 'warning' },
-      'APROVADO': { label: 'Aprovado', variant: 'success' },
-      'REJEITADO': { label: 'Rejeitado', variant: 'danger' },
-      'ERRO_EXTRACAO': { label: 'Erro na Extração', variant: 'danger' },
-      'CANCELADO': { label: 'Cancelado', variant: 'danger' },
-      'PAGO': { label: 'Pago', variant: 'success' },
-      'PENDENTE': { label: 'Pendente', variant: 'warning' },
-    };
-    return statusMap[status?.toUpperCase()] || { label: status || 'Desconhecido', variant: 'default' };
-  };
-
-  const formatarMoeda = (valor) => {
-    if (valor === undefined || valor === null) return 'MT 0,00';
-    return `MT ${valor.toLocaleString('pt-MZ', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    })}`;
-  };
-
-  const formatarData = (dataString) => {
-    if (!dataString) return '-';
-    try {
-      const data = new Date(dataString);
-      if (isNaN(data.getTime())) return '-';
-      return data.toLocaleDateString('pt-MZ', { 
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    } catch {
-      return '-';
-    }
-  };
-
-  const formatarDataHora = (dataString) => {
-    if (!dataString) return '-';
-    try {
-      const data = new Date(dataString);
-      if (isNaN(data.getTime())) return '-';
-      return data.toLocaleDateString('pt-MZ', { 
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return '-';
-    }
-  };
-
-  const stats = {
+  const stats = useMemo(() => ({
     total: invoices.length,
     aprovadas: invoices.filter(i => i.status === 'APROVADO').length,
     pendentes: invoices.filter(i => i.status === 'AGUARDANDO_APROVACAO').length,
     rejeitadas: invoices.filter(i => i.status === 'REJEITADO').length,
-  };
+  }), [invoices]);
 
-  const tableColumns = [
-    { key: 'id', label: 'ID', className: 'cell-id', render: (row) => row.id ? row.id.slice(0, 8) : 'N/A' },
+  // ============================================================
+  // COLUNAS DA TABELA
+  // ============================================================
+
+  const tableColumns = useMemo(() => [
+    { 
+      key: 'id', 
+      label: 'ID', 
+      className: 'cell-id', 
+      render: (row) => row.id ? row.id.slice(0, 8) : 'N/A' 
+    },
     { key: 'numeroFatura', label: 'Número', className: 'cell-numero' },
     { key: 'fornecedor', label: 'Fornecedor', className: 'cell-fornecedor' },
-    { key: 'valorTotal', label: 'Valor', className: 'cell-valor', render: (row) => formatarMoeda(row.valorTotal) },
-    { key: 'dataFatura', label: 'Data', render: (row) => formatarData(row.dataFatura) },
-    { key: 'dataVencimento', label: 'Vencimento', render: (row) => row.dataVencimento ? formatarData(row.dataVencimento) : '-' },
+    { 
+      key: 'valorTotal', 
+      label: 'Valor', 
+      className: 'cell-valor', 
+      render: (row) => formatarMoeda(row.valorTotal) 
+    },
+    { 
+      key: 'dataFatura', 
+      label: 'Data', 
+      render: (row) => formatarData(row.dataFatura) 
+    },
+    { 
+      key: 'dataVencimento', 
+      label: 'Vencimento', 
+      render: (row) => row.dataVencimento ? formatarData(row.dataVencimento) : '-' 
+    },
     { 
       key: 'status', 
       label: 'Status',
       render: (row) => {
         const status = getStatusBadge(row.status);
-        return <Badge variant={status.variant}>{status.label}</Badge>;
+        return (
+          <span className={`status-badge status-badge-${status.variant}`}>
+            <span className="dot" />
+            {status.label}
+          </span>
+        );
       }
     },
-    { key: 'dataCriacao', label: 'Cadastro', className: 'cell-date', render: (row) => formatarDataHora(row.dataCriacao) },
+    { 
+      key: 'dataCriacao', 
+      label: 'Cadastro', 
+      className: 'cell-date', 
+      render: (row) => formatarDataHora(row.dataCriacao) 
+    },
     {
       key: 'acoes',
       label: 'Ações',
@@ -198,15 +259,18 @@ export const Invoices = () => {
             className="action-delete"
             onClick={(e) => handleDeleteClick(e, row.id)}
             disabled={deleteLoading === row.id}
+            aria-label="Excluir fatura"
           >
             <Trash2 size={16} />
           </button>
         </>
       )
     }
-  ];
+  ], [deleteLoading, formatarMoeda, formatarData, formatarDataHora, getStatusBadge, handleDeleteClick]);
 
-  const filterOptions = ['ALL', 'AGUARDANDO_APROVACAO', 'APROVADO', 'REJEITADO', 'CANCELADO', 'PAGO'];
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   return (
     <div className="invoices-container">
@@ -272,6 +336,7 @@ export const Invoices = () => {
             onClick={fetchInvoices} 
             disabled={loading}
             className="btn-refresh"
+            aria-label="Atualizar lista"
           >
             <RefreshCw size={18} className={loading ? 'spinning' : ''} />
           </Button>
@@ -289,6 +354,7 @@ export const Invoices = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
+              aria-label="Pesquisar faturas"
             />
           </div>
         </div>
@@ -298,7 +364,7 @@ export const Invoices = () => {
             <span>Filtrar:</span>
           </div>
           <div className="filter-buttons">
-            {filterOptions.map((status) => (
+            {FILTER_OPTIONS.map((status) => (
               <Button
                 key={status}
                 variant={filter === status ? 'primary' : 'ghost'}
@@ -356,7 +422,7 @@ export const Invoices = () => {
           <Table
             columns={tableColumns}
             data={filteredInvoices}
-            onRowClick={handleRowClick}  // ✅ Usa navigate em vez de window.location
+            onRowClick={handleRowClick}
           />
         </Card>
       )}
