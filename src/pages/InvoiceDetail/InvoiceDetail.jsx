@@ -28,6 +28,7 @@ import { Modal } from '../../components/common/Modal';
 import { Alert } from '../../components/common/Alert';
 import { Spinner } from '../../components/common/Spinner';
 import { InvoiceActions } from '../../components/shared/InvoiceActions';
+import { FaturaItens } from '../../components/fatura/FaturaItens'; // ✅ IMPORT
 import api from '../../services/api';
 import './InvoiceDetail.css';
 
@@ -469,6 +470,25 @@ export const InvoiceDetail = () => {
                 <p className="finance-value">{formatarMoeda(invoice.valorTotal)}</p>
               </div>
             </div>
+          </Card>
+
+          {/* ============================================
+              🔥 ITENS DA FATURA - ADICIONADO AQUI!
+              ============================================ */}
+          <Card className="info-card itens-card">
+            <div className="card-header">
+              <Receipt size={18} />
+              <h3>Itens da Fatura</h3>
+              <span className="itens-count">
+                {invoice.itens?.length || 0} {invoice.itens?.length === 1 ? 'item' : 'itens'}
+              </span>
+            </div>
+            <FaturaItens 
+              itens={invoice.itens || []}
+              moeda={invoice.moeda || 'MZN'}
+              showHeader={false}
+              compact={false}
+            />
           </Card>
 
           <Card className="info-card">

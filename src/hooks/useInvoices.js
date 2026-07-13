@@ -17,11 +17,36 @@ export const useInvoices = () => {
     }
   }, []);
 
+  // 🔥 CORRIGIDO: Usa /detalhes para incluir itens
   const getInvoiceById = useCallback(async (id) => {
     try {
       console.log('🔍 [getInvoiceById] Buscando fatura ID:', id);
-      const { data } = await api.get(`/faturas/${id}`);
+      // ✅ Usar /detalhes para incluir os itens
+      const { data } = await api.get(`/faturas/${id}/detalhes`);
       console.log('🔍 [getInvoiceById] Dados recebidos:', data);
+      console.log('📦 [getInvoiceById] Itens (raw):', data.itens);
+      
+      // 🔥 Normalizar os itens (mapear campos do backend para o frontend)
+      if (data.itens && Array.isArray(data.itens)) {
+        data.itens = data.itens.map((item, index) => ({
+          id: item.id || index,
+          descricao: item.descricao || item.nome || 'Item sem descrição',
+          quantidade: Number(item.quantidade) || 1,
+          precoUnitario: item.valorUnitario || item.precoUnitario || 0,
+          iva: item.taxaIva || item.iva || 0,
+          total: item.valorTotal || item.total || 0,
+          // Campos extras (opcionais)
+          codigoProduto: item.codigoProduto,
+          unidade: item.unidade,
+          categoria: item.categoria,
+          posicao: item.posicao,
+        }));
+        console.log('📦 [getInvoiceById] Itens normalizados:', data.itens);
+      } else {
+        data.itens = [];
+        console.log('📦 [getInvoiceById] Nenhum item encontrado');
+      }
+      
       return data;
     } catch (err) {
       console.error('❌ [getInvoiceById] Erro:', err);
@@ -29,7 +54,6 @@ export const useInvoices = () => {
     }
   }, []);
 
-  // ✅ UPLOAD CORRIGIDO
   const uploadInvoice = useCallback(async (formData) => {
     try {
       console.log('📤 [uploadInvoice] Iniciando upload...');

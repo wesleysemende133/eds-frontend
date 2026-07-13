@@ -1,44 +1,49 @@
+/* src/assets/styles/variables.css */
+
 :root {
   /* ============================================
      AZUL PROFISSIONAL - PALETA PRINCIPAL
      ============================================ */
 
-  /* Azul primário - mais sóbrio e corporativo */
+  /* Azul primário - sóbrio e corporativo */
   --color-primary: #2563eb;
   --color-primary-dark: #1d4ed8;
   --color-primary-light: #3b82f6;
   --color-primary-hover: #2b6af0;
   --color-primary-ultra-light: #eff6ff;
+  --color-primary-bg: rgba(37, 99, 235, 0.08);
 
-  /* Azul secundário - para detalhes e ênfase */
+  /* Azul secundário */
   --color-secondary: #1e40af;
   --color-secondary-light: #3b82f6;
 
-  /* Fundo - escuro profissional (não preto total) */
-  --color-bg-primary: #0f172a;
-  --color-bg-secondary: #1e293b;
-  --color-bg-card: rgba(255, 255, 255, 0.03);
-  --color-bg-hover: rgba(255, 255, 255, 0.05);
-  --color-bg-active: rgba(37, 99, 235, 0.10);
+  /* ============================================
+     FUNDOS - CLARO (PADRÃO)
+     ============================================ */
+  --color-bg-primary: #f8fafc;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f1f5f9;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: rgba(0, 0, 0, 0.04);
+  --color-bg-active: rgba(37, 99, 235, 0.08);
 
   /* Cores de superfície */
-  --color-surface: #1e293b;
-  --color-surface-light: #334155;
-  --color-surface-dark: #0f172a;
+  --color-surface: #ffffff;
+  --color-surface-light: #f8fafc;
+  --color-surface-dark: #f1f5f9;
 
   /* ============================================
-     TEXTO
+     TEXTO - CLARO
      ============================================ */
-
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-text-dark: #475569;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-dark: #1e293b;
+  --color-text-inverse: #ffffff;
 
   /* ============================================
      STATUS
      ============================================ */
-
   --color-success: #22c55e;
   --color-success-bg: rgba(34, 197, 94, 0.12);
   --color-success-dark: #16a34a;
@@ -56,9 +61,8 @@
   --color-info-dark: #2563eb;
 
   /* ============================================
-     GRAY SCALE (mais neutro)
+     GRAY SCALE
      ============================================ */
-
   --color-gray-50: #f8fafc;
   --color-gray-100: #f1f5f9;
   --color-gray-200: #e2e8f0;
@@ -73,24 +77,19 @@
   /* ============================================
      BORDAS
      ============================================ */
-
-  --color-border: rgba(255, 255, 255, 0.05);
-  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
   --color-border-focus: rgba(37, 99, 235, 0.5);
 
   /* ============================================
      GRADIENTES
      ============================================ */
-
   --gradient-primary: linear-gradient(135deg, #1e40af, #3b82f6);
-  --gradient-sidebar: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-  --gradient-card: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
-  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  --gradient-sidebar: linear-gradient(180deg, #1e293b, #0f172a);
 
   /* ============================================
      ESPAÇAMENTOS
      ============================================ */
-
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -102,7 +101,6 @@
   /* ============================================
      BORDER RADIUS
      ============================================ */
-
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
@@ -113,17 +111,15 @@
   /* ============================================
      SOMBRAS
      ============================================ */
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12);
   --shadow-glow: 0 0 30px rgba(37, 99, 235, 0.15);
 
   /* ============================================
      TRANSIÇÕES
      ============================================ */
-
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s ease;
   --transition-slow: 0.4s ease;
@@ -131,7 +127,6 @@
   /* ============================================
      FONTES
      ============================================ */
-
   --font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-size-xs: 0.65rem;
   --font-size-sm: 0.75rem;
@@ -146,7 +141,6 @@
   /* ============================================
      Z-INDEX
      ============================================ */
-
   --z-dropdown: 100;
   --z-sticky: 200;
   --z-modal: 300;
@@ -154,123 +148,37 @@
   --z-toast: 500;
 }
 
-
 /* ============================================
-   RESET
+   MODO ESCURO (Opcional - via classe .dark)
    ============================================ */
+html.dark {
+  /* Fundos - Escuro */
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+  --color-bg-card: #1e293b;
+  --color-bg-hover: rgba(255, 255, 255, 0.05);
+  --color-bg-active: rgba(37, 99, 235, 0.15);
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+  /* Superfície */
+  --color-surface: #1e293b;
+  --color-surface-light: #334155;
+  --color-surface-dark: #0f172a;
 
-html {
-  scroll-behavior: smooth;
-}
+  /* Texto - Escuro */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-text-dark: #cbd5e1;
+  --color-text-inverse: #0f172a;
 
-body {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  line-height: 1.6;
-  color: var(--color-text-primary);
-  background: var(--color-bg-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  /* Bordas - Escuro */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.04);
 
-a {
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-a:hover {
-  color: var(--color-primary-light);
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  background: none;
-}
-
-input,
-textarea,
-select {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-ul,
-ol {
-  list-style: none;
-}
-
-img {
-  max-width: 100%;
-  display: block;
-}
-
-/* ============================================
-   SCROLLBAR
-   ============================================ */
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-bg-hover);
-  border-radius: var(--radius-sm);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-gray-600);
-  border-radius: var(--radius-sm);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-500);
-}
-
-/* ============================================
-   SELECTION
-   ============================================ */
-
-::selection {
-  background: var(--color-primary);
-  color: #ffffff;
-}
-
-::-moz-selection {
-  background: var(--color-primary);
-  color: #ffffff;
-}
-
-/* ============================================
-   FOCUS
-   ============================================ */
-
-:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* ============================================
-   MEDIA
-   ============================================ */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  /* Sombras - Escuro */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
 }

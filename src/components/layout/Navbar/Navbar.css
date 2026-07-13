@@ -1,106 +1,176 @@
+/* src/components/layout/Navbar/Navbar.css */
+
 .navbar {
-  background-color: var(--primary);
-  color: white;
-  padding: 1rem 0;
-  box-shadow: var(--shadow-md);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 100;
+  height: 64px;
+  display: flex;
+  align-items: center;
 }
 
 .navbar-container {
-  max-width: 1200px;
+  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 1.5rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 24px;
 }
 
+/* ============================================
+   BRAND / LOGO
+   ============================================ */
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: white;
+  gap: 8px;
   text-decoration: none;
-  
-  &:hover {
-    opacity: 0.9;
-  }
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
 }
 
 .brand-icon {
-  font-size: 1.75rem;
+  font-size: 24px;
 }
 
+.brand-text {
+  color: var(--color-text-primary);
+}
+
+/* ============================================
+   MENU
+   ============================================ */
 .navbar-menu {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
 }
 
-.navbar-user {
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.navbar-link {
+.nav-link {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: white;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.2s;
-  
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
+  transition: all var(--transition-fast);
 }
 
-.navbar-logout {
+.nav-link:hover {
+  background: var(--color-gray-100);
+  color: var(--color-text-primary);
+}
+
+.nav-link.active {
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+/* ============================================
+   RIGHT
+   ============================================ */
+.navbar-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-size: 0.95rem;
-  font-weight: 500;
-  
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-  }
+  gap: 8px;
+  flex-shrink: 0;
 }
 
+.profile-link {
+  padding: 8px 12px;
+}
+
+.user-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-danger);
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.logout-btn:hover {
+  background: var(--color-danger-bg);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 768px) {
-  .navbar-container {
-    padding: 0 1rem;
+  .navbar {
+    padding: 0 16px;
+    height: 56px;
   }
-  
+
   .navbar-menu {
-    gap: 0.75rem;
+    gap: 2px;
   }
-  
-  .navbar-user {
+
+  .nav-link {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .nav-link span {
     display: none;
   }
-  
-  .navbar-link,
-  .navbar-logout {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.85rem;
-    
-    svg {
-      width: 16px;
-      height: 16px;
-    }
+
+  .user-name {
+    display: none;
+  }
+
+  .logout-btn span {
+    display: none;
+  }
+
+  .logout-btn {
+    padding: 8px 10px;
+  }
+
+  .brand-text {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0 12px;
+    height: 48px;
+  }
+
+  .nav-link {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .brand-text {
+    font-size: 16px;
+  }
+
+  .brand-icon {
+    font-size: 20px;
   }
 }
