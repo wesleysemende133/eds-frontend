@@ -1,3 +1,4 @@
+// src/pages/InvoiceDetail/InvoiceDetail.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -28,7 +29,7 @@ import { Modal } from '../../components/common/Modal';
 import { Alert } from '../../components/common/Alert';
 import { Spinner } from '../../components/common/Spinner';
 import { InvoiceActions } from '../../components/shared/InvoiceActions';
-import { FaturaItens } from '../../components/fatura/FaturaItens'; // ✅ IMPORT
+import { FaturaItens } from '../../components/fatura/FaturaItens';
 import api from '../../services/api';
 import './InvoiceDetail.css';
 
@@ -46,6 +47,10 @@ export const InvoiceDetail = () => {
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [dadosPagamento, setDadosPagamento] = useState(null);
 
+  // ============================================================
+  // 🔥 FETCH FATURA (COM PARSE DOS DADOS DE PAGAMENTO)
+  // ============================================================
+
   const fetchInvoice = useCallback(async () => {
     try {
       setLoading(true);
@@ -59,12 +64,14 @@ export const InvoiceDetail = () => {
       
       setInvoice(data);
       
+      // 🔥 PARSEAR OS DADOS DE PAGAMENTO
       if (data.dadosPagamento) {
         try {
           const parsed = typeof data.dadosPagamento === 'string' 
             ? JSON.parse(data.dadosPagamento) 
             : data.dadosPagamento;
           setDadosPagamento(parsed);
+          console.log('✅ Dados de pagamento parseados:', parsed);
         } catch (e) {
           console.error('Erro ao parsear dados de pagamento:', e);
           setDadosPagamento(null);
@@ -92,6 +99,10 @@ export const InvoiceDetail = () => {
       fetchInvoice();
     }
   }, [id, fetchInvoice]);
+
+  // ============================================================
+  // HANDLERS
+  // ============================================================
 
   const handleDownload = async () => {
     if (!invoice?.urlArquivo) {
@@ -155,6 +166,10 @@ export const InvoiceDetail = () => {
 
   const cancelDelete = () => setShowDeleteModal(false);
 
+  // ============================================================
+  // FUNÇÕES AUXILIARES
+  // ============================================================
+
   const getStatusProps = (status) => {
     const statusMap = {
       'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', variant: 'warning' },
@@ -216,22 +231,34 @@ export const InvoiceDetail = () => {
 
   const formatarMoeda = (valor) => {
     if (valor === undefined || valor === null) return 'MT 0,00';
-    return `MT ${valor.toLocaleString('pt-MZ', { 
+    return `MT ${Number(valor).toLocaleString('pt-MZ', { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
     })}`;
   };
 
+  // ============================================================
+  // 🔥 RENDER DADOS DE PAGAMENTO (CORRIGIDO)
+  // ============================================================
+
   const renderDadosPagamento = () => {
     if (!dadosPagamento) return null;
 
+    // 🔥 OS DADOS ESTÃO DIRETAMENTE NO OBJETO dadosPagamento
     const metodo = dadosPagamento.metodo?.replace('_', ' ');
     const statusPagamento = dadosPagamento.status;
     const statusInfo = getStatusPagamentoProps(statusPagamento);
-    const dados = dadosPagamento.dados;
     const valor = dadosPagamento.valor;
     const referencia = dadosPagamento.referencia;
     const moeda = dadosPagamento.moeda || 'MZN';
+    
+    // 🔥 CAMPOS DE DETALHE DIRETAMENTE DO OBJETO
+    const banco = dadosPagamento.banco;
+    const iban = dadosPagamento.iban;
+    const titular = dadosPagamento.titular;
+    const swift = dadosPagamento.swift;
+    const numero = dadosPagamento.numero;
+    const operadora = dadosPagamento.operadora;
 
     return (
       <Card className="info-card pagamento-card">
@@ -271,43 +298,44 @@ export const InvoiceDetail = () => {
             )}
           </div>
 
-          {dados && (
+          {/* 🔥 DETALHES DIRETAMENTE DO OBJETO */}
+          {(banco || iban || titular || swift || numero || operadora) && (
             <div className="pagamento-detalhes">
               <label>Detalhes</label>
-              {dados.banco && (
+              {banco && (
                 <div className="detalhe-item">
                   <Building size={14} />
-                  <span><strong>Banco:</strong> {dados.banco}</span>
+                  <span><strong>Banco:</strong> {banco}</span>
                 </div>
               )}
-              {dados.iban && (
+              {iban && (
                 <div className="detalhe-item">
                   <Receipt size={14} />
-                  <span><strong>IBAN:</strong> <span className="mono">{dados.iban}</span></span>
+                  <span><strong>IBAN:</strong> <span className="mono">{iban}</span></span>
                 </div>
               )}
-              {dados.titular && (
+              {titular && (
                 <div className="detalhe-item">
                   <User size={14} />
-                  <span><strong>Titular:</strong> {dados.titular}</span>
+                  <span><strong>Titular:</strong> {titular}</span>
                 </div>
               )}
-              {dados.swift && (
+              {swift && (
                 <div className="detalhe-item">
                   <Tag size={14} />
-                  <span><strong>SWIFT:</strong> {dados.swift}</span>
+                  <span><strong>SWIFT:</strong> {swift}</span>
                 </div>
               )}
-              {dados.numero && (
+              {numero && (
                 <div className="detalhe-item">
                   <Phone size={14} />
-                  <span><strong>Telefone:</strong> {dados.numero}</span>
+                  <span><strong>Telefone:</strong> {numero}</span>
                 </div>
               )}
-              {dados.operadora && (
+              {operadora && (
                 <div className="detalhe-item">
                   <Tag size={14} />
-                  <span><strong>Operadora:</strong> {dados.operadora}</span>
+                  <span><strong>Operadora:</strong> {operadora}</span>
                 </div>
               )}
             </div>
@@ -316,6 +344,10 @@ export const InvoiceDetail = () => {
       </Card>
     );
   };
+
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   if (loading) {
     return (
@@ -346,6 +378,7 @@ export const InvoiceDetail = () => {
 
   return (
     <div className="invoice-detail-container">
+      {/* MODAL DE CONFIRMAÇÃO */}
       <Modal
         isOpen={showDeleteModal}
         onClose={cancelDelete}
@@ -369,6 +402,7 @@ export const InvoiceDetail = () => {
         <p className="modal-warning">⚠️ Esta ação não pode ser desfeita.</p>
       </Modal>
 
+      {/* HEADER */}
       <div className="detail-header">
         <div className="detail-header-left">
           <Button variant="ghost" onClick={() => navigate('/faturas')} className="btn-back" disabled={deleteLoading}>
@@ -402,6 +436,7 @@ export const InvoiceDetail = () => {
         </div>
       </div>
 
+      {/* MESSAGES */}
       {deleteSuccess && (
         <Alert variant="success">
           <CheckCircle size={18} />
@@ -409,6 +444,7 @@ export const InvoiceDetail = () => {
         </Alert>
       )}
 
+      {/* STATUS CARD */}
       <Card className="status-card">
         <div className="status-grid">
           <div className="status-item">
@@ -432,8 +468,10 @@ export const InvoiceDetail = () => {
         </div>
       </Card>
 
+      {/* DETAIL CONTENT */}
       <div className="detail-content">
         <div className="left-column">
+          {/* METADADOS */}
           <Card className="info-card">
             <div className="card-header">
               <Info size={18} />
@@ -451,6 +489,7 @@ export const InvoiceDetail = () => {
             </div>
           </Card>
 
+          {/* DADOS FINANCEIROS */}
           <Card className="info-card">
             <div className="card-header">
               <CreditCard size={18} />
@@ -472,9 +511,7 @@ export const InvoiceDetail = () => {
             </div>
           </Card>
 
-          {/* ============================================
-              🔥 ITENS DA FATURA - ADICIONADO AQUI!
-              ============================================ */}
+          {/* 🔥 ITENS DA FATURA */}
           <Card className="info-card itens-card">
             <div className="card-header">
               <Receipt size={18} />
@@ -491,6 +528,7 @@ export const InvoiceDetail = () => {
             />
           </Card>
 
+          {/* FORNECEDOR */}
           <Card className="info-card">
             <div className="card-header">
               <Building size={18} />
@@ -516,8 +554,10 @@ export const InvoiceDetail = () => {
             </div>
           </Card>
 
+          {/* 🔥 DADOS DE PAGAMENTO */}
           {renderDadosPagamento()}
 
+          {/* ARQUIVO */}
           {(invoice.nomeArquivo || invoice.urlArquivo) && (
             <Card className="info-card">
               <div className="card-header">
@@ -537,6 +577,7 @@ export const InvoiceDetail = () => {
             </Card>
           )}
 
+          {/* OBSERVAÇÕES */}
           {(invoice.descricao || invoice.errosValidacao) && (
             <Card className="info-card">
               <div className="card-header">
@@ -555,6 +596,7 @@ export const InvoiceDetail = () => {
           )}
         </div>
 
+        {/* RIGHT COLUMN - AÇÕES */}
         <div className="right-column">
           <Card className="info-card actions-card">
             <div className="card-header">

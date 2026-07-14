@@ -17,11 +17,10 @@ export const useInvoices = () => {
     }
   }, []);
 
-  // 🔥 CORRIGIDO: Usa /detalhes para incluir itens
+
   const getInvoiceById = useCallback(async (id) => {
     try {
       console.log('🔍 [getInvoiceById] Buscando fatura ID:', id);
-      // ✅ Usar /detalhes para incluir os itens
       const { data } = await api.get(`/faturas/${id}/detalhes`);
       console.log('🔍 [getInvoiceById] Dados recebidos:', data);
       console.log('📦 [getInvoiceById] Itens (raw):', data.itens);
@@ -33,18 +32,22 @@ export const useInvoices = () => {
           descricao: item.descricao || item.nome || 'Item sem descrição',
           quantidade: Number(item.quantidade) || 1,
           precoUnitario: item.valorUnitario || item.precoUnitario || 0,
-          iva: item.taxaIva || item.iva || 0,
+          // 🔥 CORRIGIDO: Usar taxaIva para o IVA percentual
+          taxaIva: item.taxaIva || item.iva || 16,  // ← MUDAR AQUI!
+          iva: item.valorIva || item.iva || 0,       // ← VALOR MONETÁRIO
           total: item.valorTotal || item.total || 0,
-          // Campos extras (opcionais)
+          // Campos extras
           codigoProduto: item.codigoProduto,
           unidade: item.unidade,
           categoria: item.categoria,
           posicao: item.posicao,
+          // 🔥 ADICIONAR PARA O FRONTEND
+          valorIva: item.valorIva || item.iva || 0,
+          valorTotal: item.valorTotal || item.total || 0,
         }));
         console.log('📦 [getInvoiceById] Itens normalizados:', data.itens);
       } else {
         data.itens = [];
-        console.log('📦 [getInvoiceById] Nenhum item encontrado');
       }
       
       return data;

@@ -1,5 +1,9 @@
 /* src/components/fatura/FaturaItens.css */
 
+/* ============================================================
+   FATURA ITENS - ESTILOS PROFISSIONAIS
+   ============================================================ */
+
 .fatura-itens {
   background: var(--color-white);
   border-radius: var(--radius-lg);
@@ -55,9 +59,9 @@
   background: var(--color-gray-50);
 }
 
+/* 🔥 ALINHAMENTO DOS CABEÇALHOS */
 .fatura-itens-table th {
   padding: var(--spacing-sm) var(--spacing-md);
-  text-align: left;
   font-size: var(--font-size-xs);
   font-weight: 600;
   text-transform: uppercase;
@@ -67,6 +71,7 @@
   white-space: nowrap;
 }
 
+/* 🔥 ALINHAMENTO DAS CÉLULAS */
 .fatura-itens-table td {
   padding: var(--spacing-md) var(--spacing-md);
   border-bottom: 1px solid var(--color-gray-100);
@@ -74,22 +79,11 @@
   vertical-align: middle;
 }
 
-.fatura-itens-table tbody tr {
-  transition: background var(--transition-fast);
-}
-
-.fatura-itens-table tbody tr:hover {
-  background: var(--color-gray-50);
-}
-
-.fatura-itens-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* ---------- COLUNAS ---------- */
+/* 🔥 ALINHAMENTO POR COLUNA */
 .col-descricao {
   width: 40%;
   min-width: 180px;
+  text-align: left;
 }
 
 .col-qtd {
@@ -107,12 +101,33 @@
 .col-iva {
   width: 15%;
   min-width: 100px;
-  text-align: right;
+  text-align: center;  /* 🔥 CENTRALIZADO PARA O BADGE */
 }
 
 .col-total {
   width: 15%;
   min-width: 120px;
+  text-align: right;
+}
+
+/* 🔥 ALINHAMENTO DOS CABEÇALHOS (MESMOS ALINHAMENTOS) */
+.fatura-itens-table th.col-descricao {
+  text-align: left;
+}
+
+.fatura-itens-table th.col-qtd {
+  text-align: center;
+}
+
+.fatura-itens-table th.col-preco {
+  text-align: right;
+}
+
+.fatura-itens-table th.col-iva {
+  text-align: center;
+}
+
+.fatura-itens-table th.col-total {
   text-align: right;
 }
 
@@ -134,6 +149,7 @@
   color: var(--color-gray-500);
   font-size: var(--font-size-xs);
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .item-nome {
@@ -144,7 +160,6 @@
 .item-quantidade {
   font-weight: 600;
   color: var(--color-gray-700);
-  text-align: center;
 }
 
 .item-preco {
@@ -152,16 +167,30 @@
   color: var(--color-gray-700);
 }
 
+/* 🔥 IVA - ESTILO PROFISSIONAL */
 .item-iva {
-  font-weight: 500;
+  font-weight: 600;
+  padding: 2px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  display: inline-block;
+  min-width: 44px;
+  text-align: center;
 }
 
-.iva-positivo {
-  color: var(--color-danger);
-}
-
-.iva-zero {
+.item-iva.iva-zero {
   color: var(--color-gray-400);
+  background: var(--color-gray-100);
+}
+
+.item-iva.iva-positivo {
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.item-iva.iva-alto {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .item-total {
