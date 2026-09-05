@@ -9,13 +9,15 @@ const api = axios.create({
 // Interceptor para adicionar token
 api.interceptors.request.use(
   (config) => {
+    // ✅ Buscar token de forma genérica
     const authStorage = localStorage.getItem('auth-storage');
     let token = null;
     
     if (authStorage) {
       try {
         const parsed = JSON.parse(authStorage);
-        token = parsed?.state?.token || null;
+        // Zustand/Context: token pode estar em state.token
+        token = parsed?.state?.token || parsed?.token || null;
       } catch (e) {
         console.error('Erro ao parsear auth-storage:', e);
       }
@@ -41,6 +43,7 @@ api.interceptors.response.use(
   (error) => {
     console.error('❌ [api] Erro:', error.response?.status, error.response?.data);
     
+    // ✅ Token expirado ou não autorizado
     if (error.response?.status === 401) {
       console.log('🔒 Token expirado. Fazendo logout...');
       localStorage.removeItem('auth-storage');
@@ -49,10 +52,13 @@ api.interceptors.response.use(
       }
     }
     
+    // ✅ Mensagem de erro amigável
     if (error.response?.data?.message) {
       error.friendlyMessage = error.response.data.message;
     } else if (error.response?.data?.mensagem) {
       error.friendlyMessage = error.response.data.mensagem;
+    } else if (error.response?.data?.erro) {
+      error.friendlyMessage = error.response.data.erro;
     } else {
       error.friendlyMessage = 'Erro na comunicação com o servidor';
     }

@@ -1,16 +1,22 @@
+// src/pages/Invoices/Invoices.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   FileText, 
   Trash2, 
   AlertCircle, 
-  Filter, 
   Eye, 
   Upload,
   RefreshCw,
   Search,
   CheckCircle,
-  Circle
+  Circle,
+  ChevronRight,
+  Plus,
+  Calendar,
+  Building,
+  DollarSign,
+  Clock
 } from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
@@ -27,16 +33,21 @@ import './Invoices.css';
 // ============================================================
 
 const STATUS_MAP = {
-  AGUARDANDO_APROVACAO: { label: 'Aguardando Aprovação', variant: 'warning' },
-  APROVADO: { label: 'Aprovado', variant: 'success' },
-  REJEITADO: { label: 'Rejeitado', variant: 'danger' },
-  ERRO_EXTRACAO: { label: 'Erro na Extração', variant: 'danger' },
-  CANCELADO: { label: 'Cancelado', variant: 'danger' },
-  PAGO: { label: 'Pago', variant: 'success' },
-  PENDENTE: { label: 'Pendente', variant: 'warning' },
+  AGUARDANDO_APROVACAO: { label: 'Aguardando', variant: 'warning', icon: Clock },
+  APROVADO: { label: 'Aprovado', variant: 'success', icon: CheckCircle },
+  REJEITADO: { label: 'Rejeitado', variant: 'danger', icon: AlertCircle },
+  PAGO: { label: 'Pago', variant: 'success', icon: CheckCircle },
+  PENDENTE: { label: 'Pendente', variant: 'warning', icon: Clock },
+  CANCELADO: { label: 'Cancelado', variant: 'danger', icon: AlertCircle },
 };
 
-const FILTER_OPTIONS = ['ALL', 'AGUARDANDO_APROVACAO', 'APROVADO', 'REJEITADO', 'CANCELADO', 'PAGO'];
+const FILTER_OPTIONS = [
+  { value: 'ALL', label: 'Todas' },
+  { value: 'AGUARDANDO_APROVACAO', label: 'Aguardando' },
+  { value: 'APROVADO', label: 'Aprovadas' },
+  { value: 'REJEITADO', label: 'Rejeitadas' },
+  { value: 'PAGO', label: 'Pagas' },
+];
 
 // ============================================================
 // COMPONENTE PRINCIPAL
@@ -57,7 +68,7 @@ export const Invoices = () => {
   const [successMessage, setSuccessMessage] = useState(null);
 
   // ============================================================
-  // FORMATADORES (Memoizados)
+  // FORMATADORES
   // ============================================================
 
   const formatarMoeda = useCallback((valor) => {
@@ -83,26 +94,13 @@ export const Invoices = () => {
     }
   }, []);
 
-  const formatarDataHora = useCallback((dataString) => {
-    if (!dataString) return '-';
-    try {
-      const data = new Date(dataString);
-      if (isNaN(data.getTime())) return '-';
-      return data.toLocaleDateString('pt-MZ', { 
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return '-';
-    }
-  }, []);
-
-  const getStatusBadge = useCallback((status) => {
-    const statusInfo = STATUS_MAP[status?.toUpperCase()] || { label: status || 'Desconhecido', variant: 'default' };
-    return statusInfo;
+  const getStatusProps = useCallback((status) => {
+    const info = STATUS_MAP[status?.toUpperCase()] || { 
+      label: status || 'Desconhecido', 
+      variant: 'default', 
+      icon: Circle 
+    };
+    return info;
   }, []);
 
   // ============================================================
@@ -151,13 +149,13 @@ export const Invoices = () => {
       await deleteInvoice(invoiceToDelete);
       
       setInvoices(prev => prev.filter(inv => inv.id !== invoiceToDelete));
-      setSuccessMessage('Fatura excluída com sucesso!');
+      setSuccessMessage('Fatura removida com sucesso!');
       
       setTimeout(() => setSuccessMessage(null), 3000);
       
     } catch (err) {
       console.error('Erro ao deletar fatura:', err);
-      setError(err.friendlyMessage || 'Não foi possível excluir a fatura.');
+      setError(err.friendlyMessage || 'Não foi possível remover a fatura.');
       await fetchInvoices();
     } finally {
       setDeleteLoading(null);
@@ -176,7 +174,7 @@ export const Invoices = () => {
   };
 
   // ============================================================
-  // DADOS COMPUTADOS (Memoizados)
+  // DADOS COMPUTADOS
   // ============================================================
 
   const filteredInvoices = useMemo(() => {
@@ -203,70 +201,68 @@ export const Invoices = () => {
 
   const tableColumns = useMemo(() => [
     { 
-      key: 'id', 
-      label: 'ID', 
-      className: 'cell-id', 
-      render: (row) => row.id ? row.id.slice(0, 8) : 'N/A' 
+      key: 'numeroFatura', 
+      label: 'Número',
+      className: 'cell-numero',
+      render: (row) => (
+        <span className="invoice-number">{row.numeroFatura || 'N/A'}</span>
+      )
     },
-    { key: 'numeroFatura', label: 'Número', className: 'cell-numero' },
-    { key: 'fornecedor', label: 'Fornecedor', className: 'cell-fornecedor' },
+    { 
+      key: 'fornecedor', 
+      label: 'Fornecedor',
+      render: (row) => (
+        <span className="invoice-fornecedor">{row.fornecedor || '-'}</span>
+      )
+    },
     { 
       key: 'valorTotal', 
-      label: 'Valor', 
-      className: 'cell-valor', 
-      render: (row) => formatarMoeda(row.valorTotal) 
+      label: 'Valor',
+      align: 'right',
+      render: (row) => (
+        <span className="invoice-valor">{formatarMoeda(row.valorTotal)}</span>
+      )
     },
     { 
       key: 'dataFatura', 
-      label: 'Data', 
-      render: (row) => formatarData(row.dataFatura) 
-    },
-    { 
-      key: 'dataVencimento', 
-      label: 'Vencimento', 
-      render: (row) => row.dataVencimento ? formatarData(row.dataVencimento) : '-' 
+      label: 'Data',
+      render: (row) => (
+        <span className="invoice-data">{formatarData(row.dataFatura)}</span>
+      )
     },
     { 
       key: 'status', 
       label: 'Status',
       render: (row) => {
-        const status = getStatusBadge(row.status);
+        const status = getStatusProps(row.status);
+        const Icon = status.icon;
         return (
-          <span className={`status-badge status-badge-${status.variant}`}>
-            <span className="dot" />
+          <span className={`status-badge status-${status.variant}`}>
+            <Icon size={12} />
             {status.label}
           </span>
         );
       }
     },
-    { 
-      key: 'dataCriacao', 
-      label: 'Cadastro', 
-      className: 'cell-date', 
-      render: (row) => formatarDataHora(row.dataCriacao) 
-    },
     {
       key: 'acoes',
-      label: 'Ações',
+      label: '',
       className: 'cell-actions',
       render: (row) => (
-        <>
-          <Link to={`/faturas/${row.id}`} className="action-link">
-            <Eye size={16} />
-            Detalhes
-          </Link>
+        <div className="row-actions">
           <button
-            className="action-delete"
+            className="btn-delete"
             onClick={(e) => handleDeleteClick(e, row.id)}
             disabled={deleteLoading === row.id}
-            aria-label="Excluir fatura"
+            title="Remover fatura"
           >
             <Trash2 size={16} />
           </button>
-        </>
+          <ChevronRight size={16} className="row-arrow" />
+        </div>
       )
     }
-  ], [deleteLoading, formatarMoeda, formatarData, formatarDataHora, getStatusBadge, handleDeleteClick]);
+  ], [deleteLoading, formatarMoeda, formatarData, getStatusProps, handleDeleteClick]);
 
   // ============================================================
   // RENDER
@@ -274,157 +270,196 @@ export const Invoices = () => {
 
   return (
     <div className="invoices-container">
-      {/* Modal de Confirmação */}
+      {/* ============================================================
+          MODAL DE CONFIRMAÇÃO
+      ============================================================ */}
       <Modal
         isOpen={showDeleteModal}
         onClose={cancelDelete}
-        title="Confirmar Exclusão"
+        title="Remover fatura?"
         footer={
-          <>
-            <Button variant="secondary" onClick={cancelDelete} disabled={deleteLoading === invoiceToDelete}>
+          <div className="modal-footer">
+            <button className="btn-cancel" onClick={cancelDelete} disabled={deleteLoading === invoiceToDelete}>
               Cancelar
-            </Button>
-            <Button 
-              variant="danger" 
+            </button>
+            <button 
+              className="btn-danger" 
               onClick={confirmDelete}
               disabled={deleteLoading === invoiceToDelete}
             >
-              {deleteLoading === invoiceToDelete ? 'Excluindo...' : 'Confirmar Exclusão'}
-            </Button>
-          </>
+              {deleteLoading === invoiceToDelete ? 'A remover...' : 'Sim, remover'}
+            </button>
+          </div>
         }
       >
-        <p>Tem certeza de que deseja excluir permanentemente esta fatura?</p>
-        <p className="modal-warning">⚠️ Esta ação não pode ser desfeita.</p>
+        <p>Tem certeza que deseja remover esta fatura?</p>
+        <p className="modal-warning">Esta ação não pode ser desfeita.</p>
       </Modal>
 
-      {/* HEADER */}
+      {/* ============================================================
+          HEADER
+      ============================================================ */}
       <div className="invoices-header">
-        <div className="header-left">
-          <h1>Faturas</h1>
-          <div className="header-stats">
-            <span className="stat-item">
-              <span className="stat-value">{stats.total}</span>
-              <span className="stat-label">Total</span>
-            </span>
-            <span className="stat-divider">|</span>
-            <span className="stat-item stat-approved">
-              <span className="stat-value">{stats.aprovadas}</span>
-              <span className="stat-label">Aprovadas</span>
-            </span>
-            <span className="stat-divider">|</span>
-            <span className="stat-item stat-pending">
-              <span className="stat-value">{stats.pendentes}</span>
-              <span className="stat-label">Pendentes</span>
-            </span>
-            <span className="stat-divider">|</span>
-            <span className="stat-item stat-rejected">
-              <span className="stat-value">{stats.rejeitadas}</span>
-              <span className="stat-label">Rejeitadas</span>
-            </span>
-          </div>
-        </div>
-        <div className="header-actions">
-          <Link to="/faturas/upload">
-            <Button variant="primary">
-              <Upload size={18} />
-              Nova Fatura
-            </Button>
+      <div>
+        <h1>Faturas</h1>
+        <p className="header-subtitle">Histórico completo de todas as faturas processadas</p>
+      </div>        <div className="header-actions">
+          <Link to="/faturas/upload" className="btn-upload">
+            <Upload size={16} />
+            Nova fatura
           </Link>
-          <Button 
-            variant="secondary" 
+          <button 
+            className="btn-refresh"
             onClick={fetchInvoices} 
             disabled={loading}
-            className="btn-refresh"
-            aria-label="Atualizar lista"
           >
-            <RefreshCw size={18} className={loading ? 'spinning' : ''} />
-          </Button>
+            <RefreshCw size={16} className={loading ? 'spinning' : ''} />
+          </button>
         </div>
       </div>
 
-      {/* TOOLBAR */}
+      {/* ============================================================
+          STATS
+      ============================================================ */}
+      <div className="stats-row">
+        <div className="stat-item">
+          <span className="stat-number">{stats.total}</span>
+          <span className="stat-label">Total</span>
+        </div>
+        <div className="stat-item success">
+          <span className="stat-number">{stats.aprovadas}</span>
+          <span className="stat-label">Aprovadas</span>
+        </div>
+        <div className="stat-item warning">
+          <span className="stat-number">{stats.pendentes}</span>
+          <span className="stat-label">Pendentes</span>
+        </div>
+        <div className="stat-item danger">
+          <span className="stat-number">{stats.rejeitadas}</span>
+          <span className="stat-label">Rejeitadas</span>
+        </div>
+      </div>
+
+      {/* ============================================================
+          TOOLBAR
+      ============================================================ */}
       <div className="toolbar">
-        <div className="toolbar-left">
-          <div className="search-box">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Pesquisar por número, fornecedor ou NUIT..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-              aria-label="Pesquisar faturas"
-            />
-          </div>
+        <div className="search-box">
+          <Search size={16} />
+          <input
+            type="text"
+            placeholder="Buscar por número ou fornecedor..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <div className="toolbar-right">
-          <div className="filter-group">
-            <Filter size={18} />
-            <span>Filtrar:</span>
-          </div>
-          <div className="filter-buttons">
-            {FILTER_OPTIONS.map((status) => (
-              <Button
-                key={status}
-                variant={filter === status ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setFilter(status)}
-                disabled={loading}
-              >
-                {status === 'ALL' ? 'Todos' : status.replace('_', ' ').toLowerCase()}
-              </Button>
-            ))}
-          </div>
+        <div className="filter-group">
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              className={`filter-btn ${filter === opt.value ? 'active' : ''}`}
+              onClick={() => setFilter(opt.value)}
+              disabled={loading}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* MESSAGES */}
+      {/* ============================================================
+          MESSAGES
+      ============================================================ */}
       {successMessage && (
-        <Alert variant="success">
-          <CheckCircle size={18} />
+        <div className="success-box">
+          <CheckCircle size={16} />
           {successMessage}
-        </Alert>
+        </div>
       )}
 
       {error && (
-        <Alert variant="danger">
-          <AlertCircle size={18} />
+        <div className="error-box">
+          <AlertCircle size={16} />
           {error}
-        </Alert>
-      )}
-
-      {/* LOADING */}
-      {loading && (
-        <div className="loading-container">
-          <Spinner size="lg" />
         </div>
       )}
 
-      {/* EMPTY STATE */}
-      {!loading && !error && invoices.length === 0 && (
-        <Card className="empty-state">
-          <FileText size={48} className="empty-icon" />
-          <h2>Nenhuma fatura localizada</h2>
-          <p>Envie um arquivo PDF ou imagem para iniciar o processamento OCR automático.</p>
-          <Link to="/faturas/upload">
-            <Button variant="primary">
-              <Upload size={18} />
-              Fazer Upload
-            </Button>
-          </Link>
-        </Card>
+      {/* ============================================================
+          LOADING
+      ============================================================ */}
+      {loading && (
+        <div className="loading-box">
+          <Spinner size="md" />
+          <p>A carregar faturas...</p>
+        </div>
       )}
 
-      {/* TABLE */}
+      {/* ============================================================
+          EMPTY STATE
+      ============================================================ */}
+      {!loading && !error && invoices.length === 0 && (
+        <div className="empty-state">
+          <FileText size={48} className="empty-icon" />
+          <h3>Nenhuma fatura encontrada</h3>
+          <p>Comece por fazer upload da sua primeira fatura.</p>
+          <Link to="/faturas/upload" className="btn-empty">
+            <Upload size={16} />
+            Fazer upload
+          </Link>
+        </div>
+      )}
+
+      {/* ============================================================
+          TABLE
+      ============================================================ */}
       {!loading && !error && filteredInvoices.length > 0 && (
-        <Card className="table-card">
-          <Table
-            columns={tableColumns}
-            data={filteredInvoices}
-            onRowClick={handleRowClick}
-          />
-        </Card>
+        <div className="table-wrap">
+          <table className="invoices-table">
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Fornecedor</th>
+                <th>Valor</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredInvoices.map((inv) => {
+                const status = getStatusProps(inv.status);
+                const Icon = status.icon;
+                return (
+                  <tr key={inv.id} onClick={() => handleRowClick(inv)}>
+                    <td className="cell-numero">
+                      <span className="invoice-number">{inv.numeroFatura || 'N/A'}</span>
+                    </td>
+                    <td>{inv.fornecedor || '-'}</td>
+                    <td className="cell-valor">{formatarMoeda(inv.valorTotal)}</td>
+                    <td className="cell-data">{formatarData(inv.dataFatura)}</td>
+                    <td>
+                      <span className={`status-badge status-${status.variant}`}>
+                        <Icon size={12} />
+                        {status.label}
+                      </span>
+                    </td>
+                    <td className="cell-actions">
+                      <button
+                        className="btn-delete"
+                        onClick={(e) => handleDeleteClick(e, inv.id)}
+                        disabled={deleteLoading === inv.id}
+                        title="Remover fatura"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <ChevronRight size={16} className="row-arrow" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

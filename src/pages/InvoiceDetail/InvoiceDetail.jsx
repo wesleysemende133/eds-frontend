@@ -12,14 +12,16 @@ import {
   Calendar,
   DollarSign,
   Hash,
-  Tag,
   Info,
   CreditCard,
   Loader2,
   Banknote,
   Phone,
   Receipt,
-  User
+  User,
+  ChevronRight,
+  Clock,
+  Tag
 } from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
@@ -48,7 +50,7 @@ export const InvoiceDetail = () => {
   const [dadosPagamento, setDadosPagamento] = useState(null);
 
   // ============================================================
-  // 🔥 FETCH FATURA (COM PARSE DOS DADOS DE PAGAMENTO)
+  // BUSCAR FATURA
   // ============================================================
 
   const fetchInvoice = useCallback(async () => {
@@ -64,14 +66,12 @@ export const InvoiceDetail = () => {
       
       setInvoice(data);
       
-      // 🔥 PARSEAR OS DADOS DE PAGAMENTO
       if (data.dadosPagamento) {
         try {
           const parsed = typeof data.dadosPagamento === 'string' 
             ? JSON.parse(data.dadosPagamento) 
             : data.dadosPagamento;
           setDadosPagamento(parsed);
-          console.log('✅ Dados de pagamento parseados:', parsed);
         } catch (e) {
           console.error('Erro ao parsear dados de pagamento:', e);
           setDadosPagamento(null);
@@ -167,31 +167,26 @@ export const InvoiceDetail = () => {
   const cancelDelete = () => setShowDeleteModal(false);
 
   // ============================================================
-  // FUNÇÕES AUXILIARES
+  // UTILITÁRIOS
   // ============================================================
 
   const getStatusProps = (status) => {
     const statusMap = {
-      'AGUARDANDO_APROVACAO': { label: 'Aguardando Aprovação', variant: 'warning' },
-      'PROCESSANDO': { label: 'Processando', variant: 'info' },
-      'PROCESSADO': { label: 'Processado', variant: 'success' },
+      'AGUARDANDO_APROVACAO': { label: 'Aguardando', variant: 'warning' },
       'APROVADO': { label: 'Aprovado', variant: 'success' },
       'REJEITADO': { label: 'Rejeitado', variant: 'danger' },
-      'ERRO_EXTRACAO': { label: 'Erro na Extração', variant: 'danger' },
-      'CANCELADO': { label: 'Cancelado', variant: 'danger' },
       'PAGO': { label: 'Pago', variant: 'success' },
       'PENDENTE': { label: 'Pendente', variant: 'warning' },
+      'CANCELADO': { label: 'Cancelado', variant: 'danger' },
     };
     return statusMap[status?.toUpperCase()] || { label: status || 'Desconhecido', variant: 'default' };
   };
 
   const getStatusPagamentoProps = (status) => {
     const statusMap = {
-      'NAO_APLICAVEL': { label: 'Não aplicável', variant: 'default' },
-      'PENDENTE': { label: 'Aguardando pagamento', variant: 'warning' },
-      'PROCESSANDO': { label: 'A processar', variant: 'info' },
+      'NAO_PAGO': { label: 'Não pago', variant: 'default' },
+      'PENDENTE': { label: 'Pendente', variant: 'warning' },
       'PAGO': { label: 'Pago', variant: 'success' },
-      'FALHOU': { label: 'Falhou', variant: 'danger' },
       'CANCELADO': { label: 'Cancelado', variant: 'danger' },
     };
     return statusMap[status] || { label: status || 'Desconhecido', variant: 'default' };
@@ -238,110 +233,93 @@ export const InvoiceDetail = () => {
   };
 
   // ============================================================
-  // 🔥 RENDER DADOS DE PAGAMENTO (CORRIGIDO)
+  // RENDER DADOS DE PAGAMENTO
   // ============================================================
 
   const renderDadosPagamento = () => {
     if (!dadosPagamento) return null;
 
-    // 🔥 OS DADOS ESTÃO DIRETAMENTE NO OBJETO dadosPagamento
     const metodo = dadosPagamento.metodo?.replace('_', ' ');
     const statusPagamento = dadosPagamento.status;
     const statusInfo = getStatusPagamentoProps(statusPagamento);
     const valor = dadosPagamento.valor;
     const referencia = dadosPagamento.referencia;
-    const moeda = dadosPagamento.moeda || 'MZN';
     
-    // 🔥 CAMPOS DE DETALHE DIRETAMENTE DO OBJETO
     const banco = dadosPagamento.banco;
     const iban = dadosPagamento.iban;
     const titular = dadosPagamento.titular;
-    const swift = dadosPagamento.swift;
     const numero = dadosPagamento.numero;
     const operadora = dadosPagamento.operadora;
 
     return (
-      <Card className="info-card pagamento-card">
-        <div className="card-header">
-          <Banknote size={18} />
-          <h3>Dados de Pagamento</h3>
+      <div className="pagamento-section">
+        <div className="section-label">
+          <Banknote size={16} />
+          <span>Dados de pagamento</span>
         </div>
         <div className="pagamento-grid">
           <div className="pagamento-info">
             <div className="info-row">
               <label>Método</label>
-              <span className="highlight">{metodo || 'Não identificado'}</span>
+              <span>{metodo || 'Não identificado'}</span>
             </div>
             <div className="info-row">
               <label>Status</label>
-              <Badge variant={statusInfo.variant}>
+              <span className={`status-pagamento ${statusInfo.variant}`}>
                 {statusInfo.label}
-              </Badge>
+              </span>
             </div>
             {referencia && (
               <div className="info-row">
                 <label>Referência</label>
-                <span className="mono">{referencia.numero}</span>
+                <span className="mono">{referencia}</span>
               </div>
             )}
             {valor && (
               <div className="info-row">
                 <label>Valor</label>
-                <span className="valor-pagamento">{formatarMoeda(valor)}</span>
-              </div>
-            )}
-            {moeda && (
-              <div className="info-row">
-                <label>Moeda</label>
-                <span>{moeda}</span>
+                <span className="valor-destaque">{formatarMoeda(valor)}</span>
               </div>
             )}
           </div>
 
-          {/* 🔥 DETALHES DIRETAMENTE DO OBJETO */}
-          {(banco || iban || titular || swift || numero || operadora) && (
+          {(banco || iban || titular || numero || operadora) && (
             <div className="pagamento-detalhes">
-              <label>Detalhes</label>
+              <p className="detalhes-label">Detalhes</p>
               {banco && (
                 <div className="detalhe-item">
                   <Building size={14} />
-                  <span><strong>Banco:</strong> {banco}</span>
+                  <span>{banco}</span>
                 </div>
               )}
               {iban && (
                 <div className="detalhe-item">
-                  <Receipt size={14} />
-                  <span><strong>IBAN:</strong> <span className="mono">{iban}</span></span>
+                  <Hash size={14} />
+                  <span className="mono">{iban}</span>
                 </div>
               )}
               {titular && (
                 <div className="detalhe-item">
                   <User size={14} />
-                  <span><strong>Titular:</strong> {titular}</span>
-                </div>
-              )}
-              {swift && (
-                <div className="detalhe-item">
-                  <Tag size={14} />
-                  <span><strong>SWIFT:</strong> {swift}</span>
+                  <span>{titular}</span>
                 </div>
               )}
               {numero && (
                 <div className="detalhe-item">
                   <Phone size={14} />
-                  <span><strong>Telefone:</strong> {numero}</span>
+                  <span>{numero}</span>
                 </div>
               )}
               {operadora && (
                 <div className="detalhe-item">
                   <Tag size={14} />
-                  <span><strong>Operadora:</strong> {operadora}</span>
+                  <span>{operadora}</span>
                 </div>
               )}
             </div>
           )}
         </div>
-      </Card>
+      </div>
     );
   };
 
@@ -352,8 +330,9 @@ export const InvoiceDetail = () => {
   if (loading) {
     return (
       <div className="invoice-detail-container">
-        <div className="loading-container">
-          <Spinner size="lg" label="Carregando detalhes da fatura..." />
+        <div className="loading-state">
+          <Spinner size="lg" />
+          <p>A carregar fatura...</p>
         </div>
       </div>
     );
@@ -362,14 +341,14 @@ export const InvoiceDetail = () => {
   if (error || !invoice) {
     return (
       <div className="invoice-detail-container">
-        <Button variant="ghost" onClick={() => navigate('/faturas')} className="btn-back">
-          <ArrowLeft size={18} />
+        <button className="btn-back" onClick={() => navigate('/faturas')}>
+          <ArrowLeft size={16} />
           Voltar
-        </Button>
-        <Alert variant="danger">
-          <AlertCircle size={18} />
+        </button>
+        <div className="error-box">
+          <AlertCircle size={16} />
           {error || 'Fatura não encontrada.'}
-        </Alert>
+        </div>
       </div>
     );
   }
@@ -378,38 +357,39 @@ export const InvoiceDetail = () => {
 
   return (
     <div className="invoice-detail-container">
-      {/* MODAL DE CONFIRMAÇÃO */}
+      {/* MODAL */}
       <Modal
         isOpen={showDeleteModal}
         onClose={cancelDelete}
-        title="Confirmar Exclusão"
+        title="Remover fatura?"
         footer={
-          <>
-            <Button variant="secondary" onClick={cancelDelete} disabled={deleteLoading}>
+          <div className="modal-footer">
+            <button className="btn-cancel" onClick={cancelDelete} disabled={deleteLoading}>
               Cancelar
-            </Button>
-            <Button 
-              variant="danger" 
-              onClick={confirmDelete}
-              disabled={deleteLoading}
-            >
-              {deleteLoading ? 'Excluindo...' : 'Confirmar Exclusão'}
-            </Button>
-          </>
+            </button>
+            <button className="btn-danger" onClick={confirmDelete} disabled={deleteLoading}>
+              {deleteLoading ? 'A remover...' : 'Sim, remover'}
+            </button>
+          </div>
         }
       >
-        <p>Tem certeza de que deseja excluir permanentemente esta fatura?</p>
-        <p className="modal-warning">⚠️ Esta ação não pode ser desfeita.</p>
+        <p>Tem certeza que deseja remover esta fatura?</p>
+        <p className="modal-warning">Esta ação não pode ser desfeita.</p>
       </Modal>
 
       {/* HEADER */}
       <div className="detail-header">
         <div className="detail-header-left">
-          <Button variant="ghost" onClick={() => navigate('/faturas')} className="btn-back" disabled={deleteLoading}>
-            <ArrowLeft size={18} />
+          <button className="btn-back" onClick={() => navigate('/faturas')}>
+            <ArrowLeft size={16} />
             Voltar
-          </Button>
-          <h1>Detalhes da Fatura</h1>
+          </button>
+          <div>
+            <h1>{invoice.numeroFatura || 'Fatura'}</h1>
+            <span className={`status-badge status-${statusInfo.variant}`}>
+              {statusInfo.label}
+            </span>
+          </div>
         </div>
         
         <div className="header-actions">
@@ -420,195 +400,207 @@ export const InvoiceDetail = () => {
             title={invoice?.urlArquivo ? 'Baixar documento' : 'Documento não disponível'}
           >
             {downloadLoading ? (
-              <Loader2 size={18} className="spinning" />
+              <Loader2 size={16} className="spinning" />
             ) : (
-              <Download size={18} />
+              <Download size={16} />
             )}
           </button>
           <button
-            className="btn-icon btn-danger"
+            className="btn-icon btn-delete"
             onClick={handleDeleteClick}
             disabled={deleteLoading || deleteSuccess}
-            title="Excluir"
+            title="Remover fatura"
           >
-            <Trash2 size={18} />
+            <Trash2 size={16} />
           </button>
         </div>
       </div>
 
       {/* MESSAGES */}
       {deleteSuccess && (
-        <Alert variant="success">
-          <CheckCircle size={18} />
-          Fatura excluída com sucesso! Redirecionando...
-        </Alert>
+        <div className="success-box">
+          <CheckCircle size={16} />
+          Fatura removida com sucesso!
+        </div>
       )}
 
-      {/* STATUS CARD */}
-      <Card className="status-card">
-        <div className="status-grid">
-          <div className="status-item">
-            <span className="status-label">Status</span>
-            <span className="status-value">
-              <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-            </span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">ID Universal</span>
-            <span className="status-value mono">{invoice.id || '-'}</span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">Data de Recebimento</span>
-            <span className="status-value">{formatarDataHora(invoice.dataCriacao)}</span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">Número do Documento</span>
-            <span className="status-value highlight">{invoice.numeroFatura || 'Não identificado'}</span>
-          </div>
+      {error && (
+        <div className="error-box">
+          <AlertCircle size={16} />
+          {error}
         </div>
-      </Card>
+      )}
 
-      {/* DETAIL CONTENT */}
+      {/* CONTENT */}
       <div className="detail-content">
+        {/* LEFT COLUMN */}
         <div className="left-column">
           {/* METADADOS */}
-          <Card className="info-card">
-            <div className="card-header">
-              <Info size={18} />
-              <h3>Metadados de Identificação</h3>
+          <div className="info-section">
+            <div className="section-label">
+              <Info size={16} />
+              <span>Informações gerais</span>
             </div>
             <div className="info-grid">
               <div className="info-row">
-                <label>Número do Documento</label>
-                <span className="highlight">{invoice.numeroFatura || 'Não identificado'}</span>
+                <label>Número</label>
+                <span className="valor-destaque">{invoice.numeroFatura || 'Não identificado'}</span>
               </div>
               <div className="info-row">
                 <label>Categoria</label>
                 <span>{invoice.categoria || 'Não definida'}</span>
               </div>
-            </div>
-          </Card>
-
-          {/* DADOS FINANCEIROS */}
-          <Card className="info-card">
-            <div className="card-header">
-              <CreditCard size={18} />
-              <h3>Dados Financeiros</h3>
-            </div>
-            <div className="finance-grid">
-              <div className="finance-item">
-                <p className="finance-label">Valor Base</p>
-                <p className="finance-value">{formatarMoeda(invoice.valorBase)}</p>
+              <div className="info-row">
+                <label>Data de criação</label>
+                <span>{formatarDataHora(invoice.dataCriacao)}</span>
               </div>
-              <div className="finance-item">
-                <p className="finance-label">IVA</p>
-                <p className="finance-value">{formatarMoeda(invoice.valorIva)}</p>
-              </div>
-              <div className="finance-item finance-total">
-                <p className="finance-label">Valor Total</p>
-                <p className="finance-value">{formatarMoeda(invoice.valorTotal)}</p>
+              <div className="info-row">
+                <label>ID</label>
+                <span className="mono">{invoice.id || '-'}</span>
               </div>
             </div>
-          </Card>
-
-          {/* 🔥 ITENS DA FATURA */}
-          <Card className="info-card itens-card">
-            <div className="card-header">
-              <Receipt size={18} />
-              <h3>Itens da Fatura</h3>
-              <span className="itens-count">
-                {invoice.itens?.length || 0} {invoice.itens?.length === 1 ? 'item' : 'itens'}
-              </span>
-            </div>
-            <FaturaItens 
-              itens={invoice.itens || []}
-              moeda={invoice.moeda || 'MZN'}
-              showHeader={false}
-              compact={false}
-            />
-          </Card>
+          </div>
 
           {/* FORNECEDOR */}
-          <Card className="info-card">
-            <div className="card-header">
-              <Building size={18} />
-              <h3>Fornecedor</h3>
+          <div className="info-section">
+            <div className="section-label">
+              <Building size={16} />
+              <span>Fornecedor</span>
             </div>
             <div className="info-grid">
               <div className="info-row">
                 <label>Nome</label>
-                <span className="highlight">{invoice.fornecedor || 'Não extraído'}</span>
+                <span className="valor-destaque">{invoice.fornecedor || 'Não extraído'}</span>
               </div>
               <div className="info-row">
                 <label>NUIT</label>
                 <span className="mono">{invoice.nuitFornecedor || 'Não identificado'}</span>
               </div>
               <div className="info-row">
-                <label>Data da Fatura</label>
+                <label>Data de emissão</label>
                 <span>{formatarData(invoice.dataFatura)}</span>
               </div>
               <div className="info-row">
-                <label>Data de Vencimento</label>
+                <label>Data de vencimento</label>
                 <span>{invoice.dataVencimento ? formatarData(invoice.dataVencimento) : 'Não informada'}</span>
               </div>
             </div>
-          </Card>
+          </div>
 
-          {/* 🔥 DADOS DE PAGAMENTO */}
+          {/* VALORES */}
+          <div className="info-section valores-section">
+            <div className="section-label">
+              <DollarSign size={16} />
+              <span>Valores</span>
+            </div>
+            <div className="valores-grid">
+              <div className="valor-item">
+                <span className="valor-label">Base</span>
+                <span className="valor">{formatarMoeda(invoice.valorBase)}</span>
+              </div>
+              <div className="valor-item">
+                <span className="valor-label">IVA</span>
+                <span className="valor">{formatarMoeda(invoice.valorIva)}</span>
+              </div>
+              <div className="valor-item total">
+                <span className="valor-label">Total</span>
+                <span className="valor">{formatarMoeda(invoice.valorTotal)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ITENS */}
+          {invoice.itens && invoice.itens.length > 0 && (
+            <div className="info-section itens-section">
+              <div className="section-label">
+                <Receipt size={16} />
+                <span>Itens da fatura</span>
+                <span className="itens-count">{invoice.itens.length}</span>
+              </div>
+              <FaturaItens 
+                itens={invoice.itens}
+                moeda={invoice.moeda || 'MZN'}
+                showHeader={false}
+                compact={true}
+              />
+            </div>
+          )}
+
+          {/* PAGAMENTO */}
           {renderDadosPagamento()}
 
           {/* ARQUIVO */}
           {(invoice.nomeArquivo || invoice.urlArquivo) && (
-            <Card className="info-card">
-              <div className="card-header">
-                <FileText size={18} />
-                <h3>Informações do Arquivo</h3>
+            <div className="info-section">
+              <div className="section-label">
+                <FileText size={16} />
+                <span>Arquivo</span>
               </div>
               <div className="info-grid">
                 <div className="info-row">
-                  <label>Nome do Arquivo</label>
+                  <label>Nome</label>
                   <span className="file-name">{invoice.nomeArquivo || '-'}</span>
                 </div>
                 <div className="info-row">
-                  <label>Caminho</label>
-                  <span className="file-path">{invoice.urlArquivo || '-'}</span>
+                  <label>Localização</label>
+                  <span className="file-path mono">{invoice.urlArquivo || '-'}</span>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* OBSERVAÇÕES */}
           {(invoice.descricao || invoice.errosValidacao) && (
-            <Card className="info-card">
-              <div className="card-header">
-                <Info size={18} />
-                <h3>Observações</h3>
+            <div className="info-section">
+              <div className="section-label">
+                <Info size={16} />
+                <span>Observações</span>
               </div>
               {invoice.descricao && (
-                <p className="description"><strong>Descrição:</strong> {invoice.descricao}</p>
+                <p className="observacao">{invoice.descricao}</p>
               )}
               {invoice.errosValidacao && (
-                <p className="description error-text">
-                  <strong>Validação:</strong> {invoice.errosValidacao}
-                </p>
+                <p className="observacao erro">{invoice.errosValidacao}</p>
               )}
-            </Card>
+            </div>
           )}
         </div>
 
         {/* RIGHT COLUMN - AÇÕES */}
         <div className="right-column">
-          <Card className="info-card actions-card">
-            <div className="card-header">
-              <Tag size={18} />
-              <h3>Ações</h3>
+          <div className="actions-section">
+            <div className="section-label">
+              <Tag size={16} />
+              <span>Ações</span>
             </div>
             <InvoiceActions
               faturaId={invoice.id}
               status={invoice.status}
               onActionComplete={fetchInvoice}
             />
-          </Card>
+          </div>
+
+          {/* RESUMO RÁPIDO */}
+          <div className="resumo-section">
+            <div className="section-label">
+              <Clock size={16} />
+              <span>Resumo rápido</span>
+            </div>
+            <div className="resumo-item">
+              <span>Total</span>
+              <span className="valor-destaque">{formatarMoeda(invoice.valorTotal)}</span>
+            </div>
+            <div className="resumo-item">
+              <span>Itens</span>
+              <span>{invoice.itens?.length || 0}</span>
+            </div>
+            <div className="resumo-item">
+              <span>Status</span>
+              <span className={`status-badge status-${statusInfo.variant}`}>
+                {statusInfo.label}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

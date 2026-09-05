@@ -3,6 +3,7 @@ import { Navbar } from './components/layout/Navbar/Navbar';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
 import { Login } from './pages/Login/Login';
 import { Register } from './pages/Register/Register';
+import { RegisterEmpresa } from './pages/Register/RegisterEmpresa';  // ✅ IMPORTAR
 import { Dashboard } from './pages/Dashboard/Dashboard';
 import { Invoices } from './pages/Invoices/Invoices';
 import { InvoiceUpload } from './pages/InvoiceUpload/InvoiceUpload';
@@ -19,17 +20,29 @@ function App() {
       {token && <Navbar />}
       <main>
         <Routes>
-          {/* Public Routes */}
+          {/* ============================================================
+              ROTAS PÚBLICAS
+          ============================================================ */}
           <Route
             path="/login"
             element={token ? <Navigate to="/" replace /> : <Login />}
           />
+
+          {/* ✅ REGISTO DE UTILIZADOR COMUM */}
           <Route
-            path="/register"
+            path="/registrar"
             element={token ? <Navigate to="/" replace /> : <Register />}
           />
 
-          {/* Protected Routes */}
+          {/* ✅ REGISTO DE EMPRESA (NOVO) */}
+          <Route
+            path="/registrar-empresa"
+            element={token ? <Navigate to="/" replace /> : <RegisterEmpresa />}
+          />
+
+          {/* ============================================================
+              ROTAS PROTEGIDAS
+          ============================================================ */}
           <Route
             path="/"
             element={
@@ -71,7 +84,7 @@ function App() {
             }
           />
 
-          {/* 🔥 Rota Admin - Protegida com permissão ADMIN */}
+          {/* Rota Admin - Protegida com permissão ADMIN */}
           <Route
             path="/admin/*"
             element={

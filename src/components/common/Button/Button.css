@@ -1,3 +1,9 @@
+/* src/components/common/Button/Button.css */
+
+/* ============================================================
+   BOTÃO BASE (COM position: relative)
+   ============================================================ */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -13,116 +19,204 @@
   padding: var(--space-2) var(--space-4);
   min-height: 40px;
   white-space: nowrap;
+  position: relative;  /* ← 🔥 FUNDAMENTAL: referência para o spinner */
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: var(--color-white);
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-secondary {
-  background: var(--color-gray-200);
-  color: var(--color-gray-700);
-}
-.btn-secondary:hover:not(:disabled) {
-  background: var(--color-gray-300);
-}
-
-.btn-success {
-  background: var(--color-success);
-  color: var(--color-white);
-}
-.btn-success:hover:not(:disabled) {
-  background: #16a34a;
-}
-
-.btn-danger {
-  background: var(--color-danger);
-  color: var(--color-white);
-}
-.btn-danger:hover:not(:disabled) {
-  background: #dc2626;
-}
-
-.btn-warning {
-  background: var(--color-warning);
-  color: var(--color-white);
-}
-.btn-warning:hover:not(:disabled) {
-  background: #d97706;
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
-}
-.btn-outline:hover:not(:disabled) {
-  background: var(--color-primary-bg);
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--color-gray-600);
-}
-.btn-ghost:hover:not(:disabled) {
-  background: var(--color-gray-100);
-}
-
-.btn-sm {
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--font-size-xs);
-  min-height: 32px;
-}
-
-.btn-md {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-size-sm);
-  min-height: 40px;
-}
-
-.btn-lg {
-  padding: var(--space-3) var(--space-6);
-  font-size: var(--font-size-base);
-  min-height: 48px;
-}
-
-.btn-full {
-  width: 100%;
-  justify-content: center;
-}
+/* ============================================================
+   LOADING STATE - ESTÁVEL
+   ============================================================ */
 
 .btn-loading {
-  position: relative;
-  color: transparent !important;
   pointer-events: none;
 }
 
-.btn-loading .spinner {
+/* 🔥 O conteúdo mantém a estrutura, mas fica invisível */
+.btn-loading .btn-content {
+  visibility: hidden;  /* ← mantém o tamanho do botão */
+}
+
+/* 🔥 Spinner centralizado */
+.btn-loading .btn-spinner {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  visibility: visible;  /* ← visível mesmo com o conteúdo oculto */
 }
 
-.spinner-sm {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+/* 🔥 Texto de loading (centralizado) */
+.btn-loading .btn-loading-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  visibility: visible;
 }
+
+/* ============================================================
+   SPINNER PARA CADA VARIANTE
+   ============================================================ */
+
+/* Para botões com fundo claro (secondary, ghost, outline) */
+.btn-secondary.btn-loading .btn-spinner {
+  border: 2.5px solid rgba(37, 99, 235, 0.2);
+  border-top-color: var(--color-primary);
+}
+
+.btn-secondary.btn-loading .btn-loading-text {
+  color: var(--color-text-secondary);
+}
+
+.btn-ghost.btn-loading .btn-spinner {
+  border: 2.5px solid rgba(37, 99, 235, 0.2);
+  border-top-color: var(--color-primary);
+}
+
+.btn-ghost.btn-loading .btn-loading-text {
+  color: var(--color-text-secondary);
+}
+
+.btn-outline.btn-loading .btn-spinner {
+  border: 2.5px solid rgba(37, 99, 235, 0.2);
+  border-top-color: var(--color-primary);
+}
+
+.btn-outline.btn-loading .btn-loading-text {
+  color: var(--color-primary);
+}
+
+/* ============================================================
+   ANIMAÇÃO
+   ============================================================ */
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   ÍCONES
+   ============================================================ */
+
+.btn-icon-left,
+.btn-icon-right {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-icon-left svg,
+.btn-icon-right svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-sm .btn-icon-left svg,
+.btn-sm .btn-icon-right svg {
+  width: 14px;
+  height: 14px;
+}
+
+.btn-lg .btn-icon-left svg,
+.btn-lg .btn-icon-right svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ============================================================
+   BOTÃO APENAS ÍCONE
+   ============================================================ */
+
+.btn-icon-only {
+  padding: 0 var(--space-2);
+  min-width: 40px;
+  min-height: 40px;
+  justify-content: center;
+}
+
+.btn-icon-only.btn-sm {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.btn-icon-only.btn-lg {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .btn {
+    min-height: 36px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+  }
+
+  .btn-lg {
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+  }
+
+  .btn-icon-only {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .btn-loading .btn-loading-text {
+    font-size: var(--font-size-xs);
+  }
+
+  .btn-loading .btn-spinner {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    min-height: 32px;
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--font-size-xs);
+  }
+
+  .btn-sm {
+    min-height: 28px;
+    padding: var(--space-1) var(--space-2);
+    font-size: 0.6rem;
+  }
+
+  .btn-lg {
+    min-height: 40px;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .btn-icon-only {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .btn-loading .btn-loading-text {
+    font-size: var(--font-size-xs);
+  }
+
+  .btn-loading .btn-spinner {
+    width: 14px;
+    height: 14px;
+  }
 }

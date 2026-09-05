@@ -1,3 +1,4 @@
+// src/pages/InvoiceUpload/InvoiceUpload.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -11,7 +12,11 @@ import {
   AlertTriangle,
   RefreshCw,
   FileWarning,
-  Copy
+  Copy,
+  Image,
+  File,
+  FileSpreadsheet,
+  FileArchive
 } from 'lucide-react';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Button } from '../../components/common/Button';
@@ -159,80 +164,68 @@ export const InvoiceUpload = () => {
       let errorVariant = 'danger';
       let userActions = [];
 
-      // ✅ Detectar arquivo duplicado
       if (errorStatus === 409 || 
           errorMessage?.toLowerCase().includes('duplicado') || 
           errorMessage?.toLowerCase().includes('duplicate') ||
           errorMessage?.toLowerCase().includes('already exists') ||
           errorMessage?.toLowerCase().includes('existente')) {
         
-        userMessage = 'Arquivo Duplicado';
-        userDetails = 'Já existe uma fatura com este arquivo no sistema. Não é possível enviar o mesmo documento duas vezes.';
+        userMessage = 'Esta fatura já existe no sistema';
+        userDetails = 'Já existe uma fatura com este arquivo. Verifique a lista de faturas para evitar duplicações.';
         errorIcon = Copy;
         errorVariant = 'warning';
         userActions = [
-          { label: 'Ver Faturas', action: () => navigate('/faturas'), variant: 'primary' },
-          { label: 'Tentar Outro Arquivo', action: clearSelectedFile, variant: 'secondary' }
+          { label: 'Ver faturas', action: () => navigate('/faturas'), variant: 'primary' },
+          { label: 'Tentar outro arquivo', action: clearSelectedFile, variant: 'secondary' }
         ];
       }
-      // ✅ Detectar arquivo corrompido
       else if (errorStatus === 400 || 
          errorMessage?.toLowerCase().includes('corrompido') ||
          errorMessage?.toLowerCase().includes('invalid') ||
-         errorMessage?.toLowerCase().includes('corrupt') ||
-         errorMessage?.toLowerCase().includes('não pode ser lido') ||
-         errorMessage?.toLowerCase().includes('duplicado') ||
-         errorMessage?.toLowerCase().includes('duplicate') ||
-         errorMessage?.toLowerCase().includes('já existe')) {
+         errorMessage?.toLowerCase().includes('corrupt')) {
         
-        userMessage = 'Arquivo Duplicado ou Corrompido';
-        userDetails = 'Não foi possível processar esta fatura. Pode ser que: (1) Ela já exista no sistema, ou (2) O arquivo esteja danificado. Verifique o histórico ou a integridade do documento.';
+        userMessage = 'Não foi possível ler o arquivo';
+        userDetails = 'O arquivo parece estar danificado ou num formato que não conseguimos processar. Tente novamente com um arquivo diferente.';
         errorIcon = FileWarning;
-        errorVariant = 'warning'; // Ou 'danger' se preferir
+        errorVariant = 'warning';
         userActions = [
-          { label: 'Tentar Novamente', action: clearSelectedFile, variant: 'primary' },
-          { label: 'Consultar Faturas', action: () => window.open('/faturas', '_blank'), variant: 'secondary' }
+          { label: 'Tentar novamente', action: clearSelectedFile, variant: 'primary' }
         ];
       }
-      // ✅ Detectar arquivo muito grande
       else if (errorStatus === 413) {
-        userMessage = 'Arquivo Muito Grande';
+        userMessage = 'O arquivo é muito grande';
         userDetails = `O tamanho máximo permitido é de 50MB. O arquivo atual excede este limite.`;
         errorIcon = AlertTriangle;
         errorVariant = 'warning';
         userActions = [
-          { label: 'Selecionar Outro Arquivo', action: clearSelectedFile, variant: 'primary' }
+          { label: 'Selecionar outro arquivo', action: clearSelectedFile, variant: 'primary' }
         ];
       }
-      // ✅ Detectar formato não suportado
       else if (errorStatus === 415) {
-        userMessage = 'Formato Não Suportado';
+        userMessage = 'Formato não suportado';
         userDetails = `Formatos suportados: ${EXTENSOES_PERMITIDAS.join(', ')}`;
         errorIcon = Info;
         errorVariant = 'warning';
         userActions = [
-          { label: 'Selecionar Outro Arquivo', action: clearSelectedFile, variant: 'primary' }
+          { label: 'Selecionar outro arquivo', action: clearSelectedFile, variant: 'primary' }
         ];
       }
-      // ✅ Erro de autenticação
       else if (errorStatus === 401 || errorStatus === 403) {
-        userMessage = 'Sessão Expirada';
+        userMessage = 'Sessão expirada';
         userDetails = 'A sua sessão expirou. Faça login novamente para continuar.';
         errorIcon = AlertCircle;
         errorVariant = 'danger';
         userActions = [
-          { label: 'Fazer Login', action: () => navigate('/login'), variant: 'primary' }
+          { label: 'Fazer login', action: () => navigate('/login'), variant: 'primary' }
         ];
       }
-      // ✅ Outros erros
       else {
-        userMessage = 'Erro no Processamento';
+        userMessage = 'Erro ao processar o arquivo';
         userDetails = err.friendlyMessage || 'Ocorreu um erro inesperado. Tente novamente mais tarde.';
         errorIcon = AlertCircle;
         errorVariant = 'danger';
         userActions = [
-          { label: 'Tentar Novamente', action: clearSelectedFile, variant: 'primary' },
-          { label: 'Contactar Suporte', action: () => window.location.href = 'mailto:suporte@eds.com', variant: 'secondary' }
+          { label: 'Tentar novamente', action: clearSelectedFile, variant: 'primary' }
         ];
       }
 
@@ -250,62 +243,67 @@ export const InvoiceUpload = () => {
     }
   };
 
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   return (
     <div className="upload-container">
+      {/* HEADER */}
       <div className="upload-header">
-        <h1>Upload de Fatura</h1>
-        <p>Envie documentos para processamento automático via OCR inteligente</p>
-        <p className="upload-info">Formatos suportados: PDF, DOCX, XLSX, PPTX, imagens e mais</p>
+        <h1>Nova fatura</h1>
+        <p>Envie o documento para processamento automático</p>
+        <span className="upload-info">
+          {EXTENSOES_PERMITIDAS.length} formatos suportados · até 50MB
+        </span>
       </div>
 
+      {/* SUCCESS */}
       {success && (
-        <Alert variant="success">
+        <div className="success-box">
           <CheckCircle size={18} />
-          Documento enviado com sucesso! Redirecionando...
-        </Alert>
-      )}
-
-      {error && errorDetails && (
-        <div className="error-container">
-          <div className={`error-alert error-alert-${errorDetails.variant}`}>
-            <div className="error-content">
-              <div className={`error-icon-wrapper error-icon-${errorDetails.variant}`}>
-                {(() => {
-                  const Icon = errorDetails.icon;
-                  return <Icon size={24} />;
-                })()}
-              </div>
-              <div className="error-message-wrapper">
-                <div className="error-title">{error}</div>
-                <div className="error-details">
-                  <p className="error-description">{errorDetails.message}</p>
-                  {errorDetails.status && (
-                    <span className="error-status">Código: {errorDetails.status}</span>
-                  )}
-                  <div className="error-actions">
-                    {errorDetails.actions.map((action, index) => (
-                      <Button 
-                        key={index}
-                        variant={action.variant} 
-                        size="sm" 
-                        onClick={action.action}
-                      >
-                        {action.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <button className="error-close" onClick={() => { setError(''); setErrorDetails(null); }}>
-                <X size={18} />
-              </button>
-            </div>
-          </div>
+          Fatura enviada com sucesso!
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="upload-form" encType="multipart/form-data">
-        <Card className="drop-zone-card">
+      {/* ERROR */}
+      {error && errorDetails && (
+        <div className={`error-box error-${errorDetails.variant}`}>
+          <div className="error-icon-wrapper">
+            {(() => {
+              const Icon = errorDetails.icon;
+              return <Icon size={20} />;
+            })()}
+          </div>
+          <div className="error-content">
+            <p className="error-title">{error}</p>
+            <p className="error-desc">{errorDetails.message}</p>
+            {errorDetails.actions && (
+              <div className="error-actions">
+                {errorDetails.actions.map((action, index) => (
+                  <button
+                    key={index}
+                    className={`error-btn error-btn-${action.variant}`}
+                    onClick={action.action}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            className="error-close"
+            onClick={() => { setError(''); setErrorDetails(null); }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* FORM */}
+      <form onSubmit={handleSubmit} className="upload-form">
+        <div className="drop-zone-wrapper">
           <div
             className={`drop-zone ${dragActive ? 'active' : ''} ${file ? 'has-file' : ''}`}
             onDragEnter={handleDrag}
@@ -328,12 +326,10 @@ export const InvoiceUpload = () => {
               </div>
             ) : file ? (
               <div className="preview-file" onClick={(e) => e.stopPropagation()}>
-                <div className="file-icon-large">
-                  <FileText size={48} />
-                </div>
+                <FileText size={40} className="file-icon" />
                 <div className="file-info-upload">
                   <span className="file-name-large">{file.name}</span>
-                  <span className="file-type">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  <span className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
                 </div>
                 <button
                   type="button"
@@ -346,13 +342,19 @@ export const InvoiceUpload = () => {
               </div>
             ) : (
               <>
-                <Upload size={48} className="upload-icon" />
-                <h3>Arraste e solte seu arquivo aqui</h3>
-                <p>ou clique para explorar os arquivos locais</p>
-                <span className="file-types">
-                  📄 PDF | 🖼️ Imagens | 📝 Word | 📊 Excel | 📑 PowerPoint | 📎 Outros
-                </span>
-                <span className="file-size-limit">Tamanho máximo: 50MB</span>
+                <div className="upload-icon-wrapper">
+                  <Upload size={44} className="upload-icon" />
+                </div>
+                <h3>Arraste o arquivo aqui</h3>
+                <p>ou clique para selecionar</p>
+                <div className="formatos">
+                  <span>📄 PDF</span>
+                  <span>🖼️ Imagem</span>
+                  <span>📝 Word</span>
+                  <span>📊 Excel</span>
+                  <span>📑 PowerPoint</span>
+                </div>
+                <span className="limite">Máximo 50MB</span>
               </>
             )}
 
@@ -365,29 +367,25 @@ export const InvoiceUpload = () => {
               style={{ display: 'none' }}
             />
           </div>
-        </Card>
+        </div>
 
         <div className="form-actions">
-          <Button
+          <button
             type="submit"
-            variant="primary"
-            size="lg"
-            fullWidth
-            isLoading={loading}
+            className={`btn-submit ${loading ? 'loading' : ''}`}
             disabled={!file || loading}
           >
-            {loading ? 'Processando OCR...' : 'Enviar para Processamento'}
+            {loading ? 'A processar...' : 'Enviar para processamento'}
             <ArrowRight size={18} />
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant="secondary"
-            size="lg"
+            className="btn-cancel-upload"
             onClick={() => navigate('/faturas')}
             disabled={loading}
           >
             Cancelar
-          </Button>
+          </button>
         </div>
       </form>
     </div>

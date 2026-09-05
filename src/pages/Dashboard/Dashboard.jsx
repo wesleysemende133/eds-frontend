@@ -1,3 +1,4 @@
+// src/pages/Dashboard/Dashboard.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -9,8 +10,17 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  ArrowRight
+  ArrowRight,
+  Plus,
+  Search,
+  DollarSign,
+  Building,
+  User,
+  Calendar,
+  ChevronRight,
+  Download
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import { useInvoices } from '../../hooks/useInvoices';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
@@ -21,11 +31,17 @@ import { Alert } from '../../components/common/Alert';
 import './Dashboard.css';
 
 export const Dashboard = () => {
+  const { user } = useAuth();  // ✅ Buscar o utilizador autenticado
   const { getInvoices } = useInvoices();
   
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // ============================================================
+  // CARREGAR DADOS
+  // ============================================================
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -46,6 +62,10 @@ export const Dashboard = () => {
     fetchInvoices();
   }, [fetchInvoices]);
 
+  // ============================================================
+  // ESTATÍSTICAS
+  // ============================================================
+
   const stats = useMemo(() => {
     return invoices.reduce(
       (acc, inv) => {
@@ -58,29 +78,51 @@ export const Dashboard = () => {
         } else if (status === 'REJEITADO' || status === 'CANCELADO') {
           acc.rejeitadas++;
         }
+        if (inv.valorTotal) {
+          acc.valorTotal += Number(inv.valorTotal);
+        }
         return acc;
       },
-      { total: 0, pendentes: 0, aprovadas: 0, rejeitadas: 0 }
+      { total: 0, pendentes: 0, aprovadas: 0, rejeitadas: 0, valorTotal: 0 }
     );
   }, [invoices]);
 
+  // ============================================================
+  // FILTRAGEM
+  // ============================================================
+
+  const filteredInvoices = useMemo(() => {
+    if (!searchTerm) return invoices;
+    return invoices.filter(inv => 
+      inv.fornecedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inv.numeroFatura?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [invoices, searchTerm]);
+
+  // ============================================================
+  // UTILITÁRIOS
+  // ============================================================
+
   const getStatusProps = useCallback((status) => {
     const statusMap = {
-      'AGUARDANDO_APROVACAO': { label: 'Aguardando', variant: 'warning' },
-      'PENDENTE': { label: 'Pendente', variant: 'warning' },
-      'APROVADO': { label: 'Aprovado', variant: 'success' },
-      'PROCESSADO': { label: 'Processado', variant: 'success' },
-      'PAGO': { label: 'Pago', variant: 'success' },
-      'REJEITADO': { label: 'Rejeitado', variant: 'danger' },
-      'CANCELADO': { label: 'Cancelado', variant: 'danger' },
-      'ERRO_EXTRACAO': { label: 'Erro', variant: 'danger' },
+      'AGUARDANDO_APROVACAO': { label: 'Aguardando', variant: 'warning', icon: Clock },
+      'PENDENTE': { label: 'Pendente', variant: 'warning', icon: Clock },
+      'APROVADO': { label: 'Aprovado', variant: 'success', icon: CheckCircle },
+      'PROCESSADO': { label: 'Processado', variant: 'success', icon: CheckCircle },
+      'PAGO': { label: 'Pago', variant: 'success', icon: CheckCircle },
+      'REJEITADO': { label: 'Rejeitado', variant: 'danger', icon: XCircle },
+      'CANCELADO': { label: 'Cancelado', variant: 'danger', icon: XCircle },
     };
-    return statusMap[status?.toUpperCase()] || { label: status || 'Desconhecido', variant: 'default' };
+    return statusMap[status?.toUpperCase()] || { 
+      label: status || 'Desconhecido', 
+      variant: 'default', 
+      icon: AlertCircle 
+    };
   }, []);
 
   const formatarMoeda = useCallback((valor) => {
     if (valor === undefined || valor === null) return 'MT 0,00';
-    return `MT ${valor.toLocaleString('pt-MZ', { 
+    return `MT ${Number(valor).toLocaleString('pt-MZ', { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
     })}`;
@@ -101,165 +143,300 @@ export const Dashboard = () => {
     }
   }, []);
 
+  // ============================================================
+  // ✅ NOME DO UTILIZADOR - COM FALLBACK
+  // ============================================================
+
+  const nomeUsuario = useMemo(() => {
+    // Tentar diferentes campos onde o nome pode estar
+    return user?.nome || 
+           user?.nomeCompleto || 
+           user?.name || 
+           user?.username || 
+           'Utilizador';
+  }, [user]);
+
+  // ============================================================
+  // CARDS DE ESTATÍSTICAS
+  // ============================================================
+
   const statCards = [
     {
       key: 'total',
-      label: 'Total de Faturas',
+      label: 'Total de faturas',
       value: stats.total,
       icon: FileText,
-      variant: 'primary'
+      variant: 'primary',
+      desc: 'Todas as faturas registadas'
     },
     {
       key: 'pendentes',
       label: 'Pendentes',
       value: stats.pendentes,
       icon: Clock,
-      variant: 'warning'
+      variant: 'warning',
+      desc: 'Aguardando aprovação'
     },
     {
       key: 'aprovadas',
       label: 'Aprovadas',
       value: stats.aprovadas,
       icon: CheckCircle,
-      variant: 'success'
+      variant: 'success',
+      desc: 'Já processadas'
     },
     {
       key: 'rejeitadas',
       label: 'Rejeitadas',
       value: stats.rejeitadas,
       icon: XCircle,
-      variant: 'danger'
+      variant: 'danger',
+      desc: 'Com problemas'
+    },
+    {
+      key: 'valor',
+      label: 'Valor total',
+      value: formatarMoeda(stats.valorTotal),
+      icon: DollarSign,
+      variant: 'gold',
+      desc: 'Montante acumulado'
     }
   ];
 
+  // ============================================================
+  // COLUNAS DA TABELA
+  // ============================================================
+
   const tableColumns = [
-    { key: 'id', label: 'ID', className: 'cell-id', render: (row) => row.id ? row.id.slice(0, 8) : 'N/A' },
-    { key: 'numeroFatura', label: 'Número' },
-    { key: 'fornecedor', label: 'Fornecedor' },
-    { key: 'valorTotal', label: 'Valor', render: (row) => formatarMoeda(row.valorTotal) },
-    { key: 'dataFatura', label: 'Data', render: (row) => formatarData(row.dataFatura) },
+    { 
+      key: 'numeroFatura', 
+      label: 'Número',
+      className: 'cell-number',
+      render: (row) => (
+        <span className="invoice-number">{row.numeroFatura || 'N/A'}</span>
+      )
+    },
+    { 
+      key: 'fornecedor', 
+      label: 'Fornecedor',
+      render: (row) => (
+        <span>{row.fornecedor || '-'}</span>
+      )
+    },
+    { 
+      key: 'valorTotal', 
+      label: 'Valor',
+      align: 'right',
+      render: (row) => (
+        <span className="cell-valor">{formatarMoeda(row.valorTotal)}</span>
+      )
+    },
+    { 
+      key: 'dataFatura', 
+      label: 'Data',
+      render: (row) => (
+        <span className="cell-data">{formatarData(row.dataFatura)}</span>
+      )
+    },
     { 
       key: 'status', 
-      label: 'Status', 
+      label: 'Status',
       render: (row) => {
         const status = getStatusProps(row.status);
-        return <Badge variant={status.variant}>{status.label}</Badge>;
+        const Icon = status.icon;
+        return (
+          <span className={`status-badge status-${status.variant}`}>
+            <Icon size={12} />
+            {status.label}
+          </span>
+        );
       }
     },
     {
       key: 'acoes',
-      label: 'Ações',
+      label: '',
       className: 'cell-actions',
       render: (row) => (
-        <Link to={`/faturas/${row.id}`} className="link-detail">
-          <Eye size={16} />
-          <span>Detalhes</span>
+        <Link to={`/faturas/${row.id}`} className="btn-detail">
+          Ver
+          <ChevronRight size={14} />
         </Link>
       )
     }
   ];
 
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   if (loading) {
     return (
       <div className="dashboard-container">
-        <Spinner size="lg" label="Carregando faturas..." />
+        <div className="loading-state">
+          <Spinner size="lg" />
+          <p>A carregar as faturas...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="dashboard-container">
-      {/* HEADER */}
+      {/* ============================================================
+          ✅ HEADER COM SAUDAÇÃO PERSONALIZADA
+      ============================================================ */}
       <div className="dashboard-header">
-        <div>
-          <h1>Dashboard</h1>
-          <p>Visão geral do sistema de gestão de faturas</p>
+        <div className="header-greeting">
+          <h1>Olá, {nomeUsuario} 👋</h1>
+          <p>Como estão as coisas por aqui?</p>
         </div>
-        <Badge variant="info">{invoices.length} faturas</Badge>
+        <Link to="/faturas/upload" className="btn-upload">
+          <Upload size={16} />
+          Nova fatura
+        </Link>
       </div>
 
-      {/* STATS GRID */}
+      {/* ============================================================
+          STATS
+      ============================================================ */}
       <div className="stats-grid">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <Card key={card.key} className="stat-card">
-              <div className="stat-card-inner">
-                <div className={`stat-icon stat-icon-${card.variant}`}>
-                  <Icon size={22} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-label">{card.label}</p>
-                  <p className="stat-value">{card.value}</p>
-                </div>
+            <div key={card.key} className={`stat-card stat-${card.variant}`}>
+              <div className="stat-icon">
+                <Icon size={20} />
               </div>
-            </Card>
+              <div>
+                <p className="stat-number">{card.value}</p>
+                <p className="stat-label">{card.label}</p>
+                <p className="stat-desc">{card.desc}</p>
+              </div>
+            </div>
           );
         })}
       </div>
 
-      {/* QUICK ACTIONS */}
+      {/* ============================================================
+          AÇÕES RÁPIDAS
+      ============================================================ */}
       <div className="quick-actions">
-        <h2>Ações Rápidas</h2>
+        <h2>O que fazer agora?</h2>
         <div className="actions-grid">
           <Link to="/faturas/upload" className="action-card">
-            <div className="action-icon">
-              <Upload size={24} />
+            <div className="action-icon upload">
+              <Upload size={20} />
             </div>
             <div>
-              <span className="action-title">Nova Fatura</span>
-              <span className="action-description">Upload com OCR automático</span>
+              <span className="action-title">Adicionar fatura</span>
+              <span className="action-desc">Upload com OCR</span>
             </div>
-            <ArrowRight size={18} className="action-arrow" />
+            <ChevronRight size={16} className="action-arrow" />
           </Link>
           <Link to="/faturas" className="action-card">
-            <div className="action-icon">
-              <FileText size={24} />
+            <div className="action-icon list">
+              <FileText size={20} />
             </div>
             <div>
-              <span className="action-title">Ver Faturas</span>
-              <span className="action-description">Lista completa de documentos</span>
+              <span className="action-title">Ver faturas</span>
+              <span className="action-desc">Lista completa</span>
             </div>
-            <ArrowRight size={18} className="action-arrow" />
+            <ChevronRight size={16} className="action-arrow" />
+          </Link>
+          <Link to="/relatorios" className="action-card">
+            <div className="action-icon report">
+              <Download size={20} />
+            </div>
+            <div>
+              <span className="action-title">Relatórios</span>
+              <span className="action-desc">Exportar dados</span>
+            </div>
+            <ChevronRight size={16} className="action-arrow" />
           </Link>
         </div>
       </div>
 
-      {/* RECENT INVOICES */}
+      {/* ============================================================
+          FATURAS RECENTES
+      ============================================================ */}
       <div className="recent-section">
         <div className="section-header">
-          <h2>Faturas Recentes</h2>
-          <Link to="/faturas" className="section-link">
-            Ver todas
-            <ArrowRight size={16} />
-          </Link>
+          <div>
+            <h2>Faturas recentes</h2>
+            <p>As últimas faturas que foram processadas</p>
+          </div>
+          <div className="section-actions">
+            <div className="search-box">
+              <Search size={14} />
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Link to="/faturas" className="see-all">
+              Ver todas
+              <ChevronRight size={14} />
+            </Link>
+          </div>
         </div>
 
         {error && (
-          <Alert variant="danger">
+          <div className="error-box">
             <AlertCircle size={16} />
             {error}
-          </Alert>
+          </div>
         )}
 
         {invoices.length === 0 ? (
           <div className="empty-state">
             <FileText size={48} className="empty-icon" />
             <h3>Nenhuma fatura encontrada</h3>
-            <p>Faça upload da primeira fatura para começar.</p>
-            <Link to="/faturas/upload">
-              <Button variant="primary">
-                <Upload size={16} />
-                Upload
-              </Button>
+            <p>Comece por fazer upload da sua primeira fatura.</p>
+            <Link to="/faturas/upload" className="btn-empty">
+              <Upload size={16} />
+              Upload
             </Link>
           </div>
         ) : (
-          <Table
-            columns={tableColumns}
-            data={invoices.slice(0, 5)}
-            onRowClick={(row) => window.location.href = `/faturas/${row.id}`}
-          />
+          <div className="table-wrap">
+            <table className="invoices-table">
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>Fornecedor</th>
+                  <th>Valor</th>
+                  <th>Data</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.slice(0, 5).map((inv) => {
+                  const status = getStatusProps(inv.status);
+                  const Icon = status.icon;
+                  return (
+                    <tr key={inv.id} onClick={() => window.location.href = `/faturas/${inv.id}`}>
+                      <td className="cell-number">{inv.numeroFatura || 'N/A'}</td>
+                      <td>{inv.fornecedor || '-'}</td>
+                      <td className="cell-valor">{formatarMoeda(inv.valorTotal)}</td>
+                      <td className="cell-data">{formatarData(inv.dataFatura)}</td>
+                      <td>
+                        <span className={`status-badge status-${status.variant}`}>
+                          <Icon size={12} />
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="cell-action">
+                        <ChevronRight size={16} className="action-chevron" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

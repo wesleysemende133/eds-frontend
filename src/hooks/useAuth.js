@@ -14,6 +14,10 @@ export const useAuth = () => {
   const logout = authStore((state) => state.logout);
   const setLoading = authStore((state) => state.setLoading);
 
+  // ============================================================
+  // LOGIN
+  // ============================================================
+
   const login = useCallback(async (email, senha) => {
     console.log('🔑 Login iniciado para:', email);
     setLoading(true);
@@ -56,10 +60,12 @@ export const useAuth = () => {
     }
   }, [setLoading, setError, setToken, setUser]);
 
-  // ✅ REGISTER - FUNÇÃO CORRETA
+  // ============================================================
+  // REGISTRO DE UTILIZADOR COMUM
+  // ============================================================
+
   const register = useCallback(async (dados) => {
     console.log('📝 Registo iniciado para:', dados.email);
-    console.log('📝 Dados:', dados);
     setLoading(true);
     setError(null);
 
@@ -97,8 +103,6 @@ export const useAuth = () => {
       return data;
     } catch (err) {
       console.error('❌ Erro no registo:', err);
-      console.error('❌ Status:', err.response?.status);
-      console.error('❌ Dados do erro:', err.response?.data);
       const mensagem = err.response?.data?.mensagem || err.response?.data?.message || 'Erro ao registrar';
       setError(mensagem);
       throw err;
@@ -107,9 +111,61 @@ export const useAuth = () => {
     }
   }, [setLoading, setError, setToken, setUser]);
 
+  // ============================================================
+  // ✅ REGISTRO DE EMPRESA (NOVO)
+  // ============================================================
+
+  const registerEmpresa = useCallback(async (dados) => {
+    console.log('🏢 Registo de empresa iniciado para:', dados.email);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data } = await api.post('/auth/registrar-empresa', {
+        nome: dados.nome,
+        email: dados.email,
+        senha: dados.senha,
+        telefone: dados.telefone || '',
+        nuit: dados.nuit,
+        endereco: dados.endereco || '',
+        website: dados.website || '',
+        adminNome: dados.adminNome,
+        adminEmail: dados.adminEmail,
+        adminSenha: dados.adminSenha,
+        adminTelefone: dados.adminTelefone || '',
+        funcionarios: dados.funcionarios || [],
+      });
+
+      console.log('✅ Empresa registrada com sucesso:', data);
+      
+      // ❌ NÃO fazer login automático para empresa (pode ou não)
+      // O admin/empresa deve fazer login separadamente
+      
+      setLoading(false);
+      return data;
+    } catch (err) {
+      console.error('❌ Erro no registo de empresa:', err);
+      const mensagem = err.response?.data?.mensagem || 
+                       err.response?.data?.message || 
+                       'Erro ao registrar empresa';
+      setError(mensagem);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError]);
+
+  // ============================================================
+  // LIMPAR ERROS
+  // ============================================================
+
   const limparErros = useCallback(() => {
     setError(null);
   }, [setError]);
+
+  // ============================================================
+  // RETORNO
+  // ============================================================
 
   return {
     user,
@@ -117,8 +173,9 @@ export const useAuth = () => {
     loading,
     error,
     login,
-    register, // ✅ Exportar como register
-    registrar: register, // ✅ Também como registrar para compatibilidade
+    register,
+    registrar: register,        // ✅ Compatibilidade
+    registerEmpresa,            // ✅ NOVO - Registo de empresa
     logout,
     limparErros,
     isAuthenticated: !!token
