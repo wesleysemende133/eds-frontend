@@ -1,18 +1,18 @@
 // src/hooks/useAdmin.js
 import { useCallback } from 'react';
-// 🔥 Importar SEM .js
 import api from '../services/api';
 
 export const useAdmin = () => {
   
   // ============================================================
-  // DASHBOARD
+  // DASHBOARD - CORRIGIDO
   // ============================================================
 
   const getDashboardMetrics = useCallback(async () => {
     try {
       console.log('📊 [useAdmin] Buscando métricas do dashboard...');
-      const { data } = await api.get('/admin/dashboard/metricas');
+      // 🔥 CORRIGIR: usar /admin/dashboard em vez de /admin/dashboard/metricas
+      const { data } = await api.get('/admin/dashboard');
       console.log('📊 [useAdmin] Métricas recebidas:', data);
       return data;
     } catch (err) {
@@ -40,9 +40,9 @@ export const useAdmin = () => {
   const ativarUsuario = useCallback(async (id) => {
     try {
       console.log('✅ [useAdmin] Ativando utilizador:', id);
-      await api.post(`/admin/usuarios/${id}/ativar`);
+      const { data } = await api.put(`/admin/usuarios/${id}/ativar`);
       console.log('✅ [useAdmin] Utilizador ativado com sucesso');
-      return true;
+      return data;
     } catch (err) {
       console.error('❌ [useAdmin] Erro ao ativar utilizador:', err);
       throw err;
@@ -52,9 +52,9 @@ export const useAdmin = () => {
   const desativarUsuario = useCallback(async (id) => {
     try {
       console.log('⛔ [useAdmin] Desativando utilizador:', id);
-      await api.post(`/admin/usuarios/${id}/desativar`);
+      const { data } = await api.put(`/admin/usuarios/${id}/desativar`);
       console.log('⛔ [useAdmin] Utilizador desativado com sucesso');
-      return true;
+      return data;
     } catch (err) {
       console.error('❌ [useAdmin] Erro ao desativar utilizador:', err);
       throw err;
@@ -64,9 +64,9 @@ export const useAdmin = () => {
   const promoverUsuario = useCallback(async (id, perfil) => {
     try {
       console.log('⬆️ [useAdmin] Promovendo utilizador:', id, 'para', perfil);
-      await api.post(`/admin/usuarios/${id}/promover?perfil=${perfil}`);
+      const { data } = await api.put(`/admin/usuarios/${id}/promover?perfil=${perfil}`);
       console.log('⬆️ [useAdmin] Utilizador promovido com sucesso');
-      return true;
+      return data;
     } catch (err) {
       console.error('❌ [useAdmin] Erro ao promover utilizador:', err);
       throw err;

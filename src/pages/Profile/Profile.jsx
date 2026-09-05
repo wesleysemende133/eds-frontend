@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/Profile/Profile.jsx
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, 
@@ -12,15 +13,12 @@ import {
   Shield,
   AlertCircle,
   CheckCircle,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
+  UserCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
-import { Button } from '../../components/common/Button';
-import { Card } from '../../components/common/Card';
-import { Input } from '../../components/common/Input';
-import { Alert } from '../../components/common/Alert';
-import { Spinner } from '../../components/common/Spinner';
 import './Profile.css';
 
 export const Profile = () => {
@@ -38,26 +36,24 @@ export const Profile = () => {
     phone: ''
   });
 
-  // Carregar perfil
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        setProfileLoading(true);
-        await getProfile();
-      } catch (err) {
-        console.error('Erro ao carregar perfil:', err);
-        if (err.response?.status === 401) {
-          navigate('/login');
-        }
-      } finally {
-        setProfileLoading(false);
+  const loadProfile = useCallback(async () => {
+    try {
+      setProfileLoading(true);
+      await getProfile();
+    } catch (err) {
+      console.error('Erro ao carregar perfil:', err);
+      if (err.response?.status === 401) {
+        navigate('/login');
       }
-    };
-    
-    loadProfile();
+    } finally {
+      setProfileLoading(false);
+    }
   }, [getProfile, navigate]);
 
-  // Atualizar formulário quando o usuário mudar
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -76,6 +72,7 @@ export const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
       const dados = {
         nome: formData.name,
@@ -84,11 +81,9 @@ export const Profile = () => {
       };
       
       await updateProfile(dados);
-      
-      // ✅ Recarregar o perfil para garantir consistência
       await getProfile();
       
-      setSuccessMessage('Perfil atualizado com sucesso!');
+      setSuccessMessage('Perfil atualizado com sucesso');
       setIsEditing(false);
       
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -107,173 +102,261 @@ export const Profile = () => {
     });
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
   const getInitials = (name) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(' ')
+      .filter(n => n.length > 0)
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const formatPhone = (phone) => {
+    if (!phone) return 'Não informado';
+    return phone;
   };
 
   if (profileLoading) {
     return (
       <div className="profile-container">
-        <Spinner size="lg" label="Carregando perfil..." />
+        <div className="profile-loading">
+          <Loader2 size={32} className="spinning" />
+          <p>Carregando perfil...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="profile-container">
-      <div className="profile-header">
+      {/* Header */}
+      <header className="profile-header">
         <div className="profile-header-left">
-          <Button variant="ghost" onClick={() => navigate('/')} className="btn-back">
+          <button 
+            className="btn-back"
+            onClick={() => navigate('/')}
+            type="button"
+          >
             <ArrowLeft size={18} />
             Voltar
-          </Button>
+          </button>
           <h1>Meu Perfil</h1>
         </div>
-        <Button variant="secondary" onClick={handleLogout} className="btn-logout">
+        <button 
+          className="btn-logout"
+          onClick={handleLogout}
+          type="button"
+        >
           <LogOut size={18} />
           Sair
-        </Button>
-      </div>
+        </button>
+      </header>
 
+      {/* Messages */}
       {successMessage && (
-        <Alert variant="success">
+        <div className="alert-success">
           <CheckCircle size={18} />
-          {successMessage}
-        </Alert>
+          <span>{successMessage}</span>
+        </div>
       )}
 
       {error && (
-        <Alert variant="danger">
+        <div className="alert-error">
           <AlertCircle size={18} />
-          {error}
-        </Alert>
+          <span>{error}</span>
+        </div>
       )}
 
-      <Card className="profile-card" variant="elevated">
+      {/* Profile Card */}
+      <section className="profile-card">
         <div className="profile-avatar-section">
           <div className="profile-avatar">
             {getInitials(formData.name)}
           </div>
           <h2>{formData.name || 'Utilizador'}</h2>
-          <p className="profile-role">{user?.perfil || 'Utilizador'}</p>
+          <span className="profile-role">{user?.perfil || 'Utilizador'}</span>
         </div>
 
         {!isEditing ? (
           <div className="profile-view">
             <div className="profile-info">
               <div className="info-item">
-                <div className="info-icon"><User size={18} /></div>
+                <div className="info-icon">
+                  <User size={18} />
+                </div>
                 <div className="info-content">
                   <span className="info-label">Nome completo</span>
                   <span className="info-value">{formData.name || 'Não informado'}</span>
                 </div>
               </div>
+
               <div className="info-item">
-                <div className="info-icon"><Mail size={18} /></div>
+                <div className="info-icon">
+                  <Mail size={18} />
+                </div>
                 <div className="info-content">
                   <span className="info-label">E-mail</span>
                   <span className="info-value">{formData.email || 'Não informado'}</span>
                 </div>
               </div>
+
               <div className="info-item">
-                <div className="info-icon"><Building size={18} /></div>
+                <div className="info-icon">
+                  <Building size={18} />
+                </div>
                 <div className="info-content">
                   <span className="info-label">Empresa</span>
                   <span className="info-value">{formData.company || 'Não informada'}</span>
                 </div>
               </div>
+
               <div className="info-item">
-                <div className="info-icon"><Phone size={18} /></div>
+                <div className="info-icon">
+                  <Phone size={18} />
+                </div>
                 <div className="info-content">
                   <span className="info-label">Telefone</span>
-                  <span className="info-value">{formData.phone || 'Não informado'}</span>
+                  <span className="info-value">{formatPhone(formData.phone)}</span>
                 </div>
               </div>
             </div>
 
-            <Button variant="primary" onClick={() => setIsEditing(true)} className="btn-edit">
+            <button 
+              className="btn-edit"
+              onClick={() => setIsEditing(true)}
+              type="button"
+            >
               <Edit2 size={18} />
               Editar Perfil
-            </Button>
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="profile-edit">
-            <Input
-              label="Nome completo"
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Seu nome completo"
-              icon={<User size={18} />}
-              required
-            />
+            <div className="form-group">
+              <label htmlFor="name">Nome completo</label>
+              <div className="input-wrapper">
+                <User size={18} className="input-icon" />
+                <input
+                  id="name"
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Seu nome completo"
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-            <Input
-              label="E-mail"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="seu@email.com"
-              icon={<Mail size={18} />}
-              disabled
-              required
-            />
+            <div className="form-group">
+              <label htmlFor="email">E-mail</label>
+              <div className="input-wrapper disabled">
+                <Mail size={18} className="input-icon" />
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="seu@email.com"
+                  disabled
+                />
+              </div>
+              <span className="field-hint">O e-mail não pode ser alterado</span>
+            </div>
 
-            <Input
-              label="Empresa"
-              type="text"
-              name="company"
-              value={formData.company}
-              onChange={handleChange}
-              placeholder="Nome da empresa"
-              icon={<Building size={18} />}
-            />
+            <div className="form-group">
+              <label htmlFor="company">Empresa</label>
+              <div className="input-wrapper">
+                <Building size={18} className="input-icon" />
+                <input
+                  id="company"
+                  type="text"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleChange}
+                  placeholder="Nome da empresa"
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-            <Input
-              label="Telefone"
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="+258 84 123 4567"
-              icon={<Phone size={18} />}
-            />
+            <div className="form-group">
+              <label htmlFor="phone">Telefone</label>
+              <div className="input-wrapper">
+                <Phone size={18} className="input-icon" />
+                <input
+                  id="phone"
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+258 84 123 4567"
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
             <div className="form-actions">
-              <Button type="submit" variant="primary" isLoading={loading} disabled={loading}>
-                <Save size={18} />
-                {loading ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-              <Button type="button" variant="secondary" onClick={handleCancel} disabled={loading}>
+              <button 
+                type="submit" 
+                className="btn-save"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="spinning" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    Salvar
+                  </>
+                )}
+              </button>
+              <button 
+                type="button" 
+                className="btn-cancel-form"
+                onClick={handleCancel}
+                disabled={loading}
+              >
                 <X size={18} />
                 Cancelar
-              </Button>
+              </button>
             </div>
           </form>
         )}
-      </Card>
+      </section>
 
-      <Card className="profile-card danger-zone" variant="bordered">
+      {/* Danger Zone */}
+      <section className="profile-card danger-zone">
         <div className="danger-zone-header">
           <Shield size={20} />
           <h3>Zona de Perigo</h3>
         </div>
-        <p className="danger-description">Ações irreversíveis que afetam a sua conta.</p>
+        <p className="danger-description">
+          Ações irreversíveis que afetam a sua conta.
+        </p>
         <div className="danger-actions">
-          <Button variant="danger" onClick={handleLogout}>
+          <button 
+            className="btn-danger"
+            onClick={handleLogout}
+            type="button"
+          >
             <LogOut size={18} />
             Sair da Conta
-          </Button>
+          </button>
         </div>
-      </Card>
+      </section>
     </div>
   );
 };
